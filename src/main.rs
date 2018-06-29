@@ -42,13 +42,13 @@ fn tokenize(lines: &Vec<&str>) -> Vec<Vec<String>> {
                     if word.contains("'") {
                         
                         let mut s = String::new();
-                        s.push_str(word.trim_matches('\''));
+                        s.push_str(word);
                         s.push_str(" ");
 
                         loop {
                             let mut w = words.next().unwrap(); 
                             if w.contains("'") {
-                                s.push_str(w.trim_matches('\''));
+                                s.push_str(w);
                                 break
                             } else {
                                 s.push_str(w);
@@ -83,60 +83,133 @@ where
 
     loop {
         match token_lines.next() {
-        Some(line) => {
-            let mut token_line = line.iter();
-            let mut line_eval = Vec::new();
-        loop {
-            match token_line.next() {
-                Some(t) => {
-                    let token : &str = t;
-                    match token {
-                        "very" => {
-                            line_eval.insert(0, "ASSIGN".to_string());
-                            let variable_name = token_line.next().unwrap();
-                            line_eval.insert(0, variable_name.to_string());
+            Some(line) => {
+                let mut token_line = line.iter();
+                let mut line_eval = Vec::new();
+                loop {
+                    match token_line.next() {
+                        Some(t) => {
+                            let token : &str = t;
+                            match token {
+                                "very" => {
+                                    line_eval.insert(0, "ASSIGN".to_string());
+                                    let variable_name = token_line.next().unwrap();
+                                    line_eval.insert(0, variable_name.to_string());                                                                                                                                             
+                                },
+                                "much" => {
+                                    line_eval.insert(0, "FUNCTION".to_string());
+                                    
+                                    line_eval.insert(0, token_line.len().to_string());
 
-                            let next_token = token_line.next().unwrap();
-                            if next_token != "is" {
-                                panic!("Expecting keyword 'is' found {}", next_token);
+                                    for _j in 0..token_line.len() {
+                                        line_eval.insert(0, token_line.next().unwrap().to_string());
+                                    }
+
+                                    ast.append(&mut gen_ast(token_lines));
+                                },
+                                "plz" => {
+                                    line_eval.insert(0, "CALL".to_string());
+                                },                               
+                                "wow" => {
+                                    ast.insert(0, "DONT_EVAL".to_string());
+                                    return ast;
+                                },
+                                _ => {
+                                    line_eval.insert(0, token.to_string());
+                                }
                             }
                         },
-                        "much" => {
-                            line_eval.insert(0, "FUNCTION".to_string());
-                            
-                            line_eval.insert(0, token_line.len().to_string());
-
-                            for _j in 0..token_line.len() {
-                                line_eval.insert(0, token_line.next().unwrap().to_string());
-                            }
-
-                            ast.append(&mut gen_ast(token_lines));
-                        },
-                        "plz" => {
-                            line_eval.insert(0, "CALL".to_string());
-                        },
-                        "with" => {
-                            ()
-                        },
-                        "wow" => {
-                            ast.insert(0, "DONT_CALL".to_string());
-                            return ast;
-                        },
-                        _ => {
-                            line_eval.insert(0, token.to_string());
-                        }
+                        None => break
                     }
-                },
-                None => break
-            }
-        }
-            ast.append(&mut line_eval);
-        },
+                }
+                ast.append(&mut line_eval);
+            },
             None => break
         }
+    }
+    
+    return ast;
+}
+
+//Runs through ast and returns stack
+fn interpret(code_ast: &Vec<String>) -> Vec<String> {
+    let mut stack = Vec::<String>::new();
+    let mut context = HashMap::new();
+
+    let mut eval = true;
+
+    for c in code_ast {
+        let opcode: &str = c;
+        
+        if opcode == "FUNCTION" {
+            eval = true;
         }
         
-    return ast;
+        if eval {
+            match opcode {
+                "ASSIGN" => {
+                    let variable_name = stack.pop();
+                    let value = stack.pop();
+                    context.insert(variable_name, value);
+                },
+                "DONT_EVAL" => {
+                    eval = false;
+                    stack.push("FUNCTION_END".to_string());                   
+                },
+                "CALL" => {
+                    let function_name = stack.pop();
+
+                    if context.contains_key(&function_name) {
+                        let function_body = context.get(&function_name).unwrap();
+                        println!("{:?}", function_body);                        
+                    } else {
+                        panic!("Function not found {}", function_name.unwrap());
+                    }
+                },
+                "FUNCTION" => {
+                    let num_args_str = stack.pop().unwrap();
+                    let num_args: i32 = num_args_str.parse().unwrap();
+
+                    let mut fun = String::new();
+
+                    for _i in 0..num_args {
+                        let arg: String = stack.pop().unwrap();
+                        fun.push_str(&arg);
+                        fun.push_str(" ");
+                    }
+
+                    fun.push_str("| ");
+
+                    loop {
+                        if stack.len() > 0 {
+                            let val: &str = &stack.pop().unwrap();
+                            match val {
+                                "FUNCTION" => {
+                                    fun.push_str(val);
+                                },
+                                "FUNCTION_END" => {                                                              },
+                                _ => {
+                                    fun.push_str(val);
+                                }                           
+                            }
+                            fun.push_str(" ");
+                        } else {
+                            break
+                        }
+                    }
+
+                    stack.push(fun);                                        
+                },
+                _ => {
+                    stack.push(opcode.to_string());
+                }
+            }
+        } else {
+            stack.push(opcode.to_string());
+        }
+    }
+    
+    return stack;
 }
 
 
@@ -154,8 +227,9 @@ fn main() {
     let token_lines = tokenize(&code_lines);
     let mut token_lines_iter = token_lines.iter();
     let ast = gen_ast(&mut token_lines_iter);
+    let stack = interpret(&ast);
 
-    for node in ast {
-        println!("{}", node);
+    for value in stack {
+        println!("{}", value);
     }
 }

@@ -2,53 +2,45 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::collections::HashMap;
 
-extern crate regex;
-use regex::Regex;
+fn tokenize(lines: &Vec<&str>) -> Vec<String> {
 
-struct Token {
-    token_type: String,
-    value: String,
-}
+    let mut tokens = Vec::new();
 
-fn tokenize(contents: &str) -> Vec<Token> {
-    let mut tokens = contents.split_whitespace();
+    for line in lines {
+        let mut words = line.split_whitespace();
 
-    let mut vec = Vec::new();
+        loop {
+            match words.next() {
+                Some(word) => {
+                    if word.contains("'") {
+                        
+                        let mut s = String::new();
+                        s.push_str(word.trim_matches('\''));
+                        s.push_str(" ");
 
-    loop {
-        match tokens.next() {
-            Some(token) => {
-                if token.contains("'") {
-                    
-                    let mut s = String::new();
-                    s.push_str(token.trim_matches('\''));
-
-                    loop {
-                        let mut t = tokens.next().unwrap(); 
-                        if t.contains("'") {
-                            s.push_str(t.trim_matches('\''));
-                            break
-                        } else {
-                            s.push_str(t);
+                        loop {
+                            let mut w = words.next().unwrap(); 
+                            if w.contains("'") {
+                                s.push_str(w.trim_matches('\''));
+                                break
+                            } else {
+                                s.push_str(w);
+                                s.push_str(" ");
+                            }
                         }
+
+                        tokens.push(s);
+                    } else if word == "shh" {
+                        break
+                    } else {
+                        tokens.push(word.to_string());
                     }
-                    
-                    vec.push(Token {
-                        token_type: "String".to_string(),
-                        value: s
-                    });
-                } else {                 
-                    vec.push(Token {
-                        token_type: "Atom".to_string(),
-                        value: token.to_string()
-                    });
-                }
-            },
-            None => { break }
+                },
+                None => break
+            }
         }
     }
-
-    return vec;
+    return tokens;
 }
 
 //Translate into IR stack
@@ -79,6 +71,7 @@ fn tokenize(contents: &str) -> Vec<Token> {
 //     return Vec::new();
 // }
 
+//For now this simply deletes any lines between quiet and loud
 fn preprocess(contents: &str) -> Vec<&str> {
 
     let mut lines = contents.lines();
@@ -115,12 +108,10 @@ fn main() {
         .expect("something went wrong reading the file");
 
     let code_lines = preprocess(&contents);
+    let tokens = tokenize(&code_lines);
 
-    for line in code_lines {
-        println!("{}", line);
+    for token in tokens {
+        println!("{}", token);
     }
-
-
-    // let tokens = tokenize(&contents);
     // let ir = parse(&tokens);
 }

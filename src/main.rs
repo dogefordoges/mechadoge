@@ -75,13 +75,17 @@ fn tokenize(lines: &Vec<&str>) -> Vec<Vec<String>> {
 }
 
 //Translate into IR stack
-fn gen_ast(token_lines: &Vec<Vec<String>>, n: usize, inner_process: bool) -> Vec<String> {
+fn gen_ast<'a, I>(token_lines: &mut I) -> Vec<String>
+where
+    I: Iterator<Item = &'a Vec<String>>
+{
     let mut ast = Vec::new();
 
-    for i in n..token_lines.len() {
-        let mut token_line = token_lines[i].iter();
-        let mut line_eval = Vec::new();
-
+    loop {
+        match token_lines.next() {
+        Some(line) => {
+            let mut token_line = line.iter();
+            let mut line_eval = Vec::new();
         loop {
             match token_line.next() {
                 Some(t) => {
@@ -106,7 +110,7 @@ fn gen_ast(token_lines: &Vec<Vec<String>>, n: usize, inner_process: bool) -> Vec
                                 line_eval.insert(0, token_line.next().unwrap().to_string());
                             }
 
-                            ast.append(&mut gen_ast(token_lines, i+1, true));
+                            ast.append(&mut gen_ast(token_lines));
                         },
                         "plz" => {
                             line_eval.insert(0, "CALL".to_string());
@@ -115,9 +119,8 @@ fn gen_ast(token_lines: &Vec<Vec<String>>, n: usize, inner_process: bool) -> Vec
                             ()
                         },
                         "wow" => {
-                            if inner_process {
-                                return ast;
-                            }
+                            ast.insert(0, "DONT_CALL".to_string());
+                            return ast;
                         },
                         _ => {
                             line_eval.insert(0, token.to_string());
@@ -127,11 +130,15 @@ fn gen_ast(token_lines: &Vec<Vec<String>>, n: usize, inner_process: bool) -> Vec
                 None => break
             }
         }
-        ast.append(&mut line_eval);
-    }
-
+            ast.append(&mut line_eval);
+        },
+            None => break
+        }
+        }
+        
     return ast;
 }
+
 
 fn main() {
     let filename = "testwow.mdg";
@@ -145,7 +152,8 @@ fn main() {
 
     let code_lines = preprocess(&contents);
     let token_lines = tokenize(&code_lines);
-    let ast = gen_ast(&token_lines, 0, false);
+    let mut token_lines_iter = token_lines.iter();
+    let ast = gen_ast(&mut token_lines_iter);
 
     for node in ast {
         println!("{}", node);

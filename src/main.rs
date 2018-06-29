@@ -75,11 +75,12 @@ fn tokenize(lines: &Vec<&str>) -> Vec<Vec<String>> {
 }
 
 //Translate into IR stack
-fn gen_ast(token_lines: &Vec<Vec<String>>) -> Vec<String> {
+fn gen_ast(token_lines: &Vec<Vec<String>>, n: usize, inner_process: bool) -> Vec<String> {
     let mut ast = Vec::new();
 
-    for i in 0..token_lines.len() {
+    for i in n..token_lines.len() {
         let mut token_line = token_lines[i].iter();
+        let mut line_eval = Vec::new();
 
         loop {
             match token_line.next() {
@@ -87,9 +88,9 @@ fn gen_ast(token_lines: &Vec<Vec<String>>) -> Vec<String> {
                     let token : &str = t;
                     match token {
                         "very" => {
-                            ast.push("ASSIGN".to_string());
+                            line_eval.insert(0, "ASSIGN".to_string());
                             let variable_name = token_line.next().unwrap();
-                            ast.push(variable_name.to_string());
+                            line_eval.insert(0, variable_name.to_string());
 
                             let next_token = token_line.next().unwrap();
                             if next_token != "is" {
@@ -97,27 +98,36 @@ fn gen_ast(token_lines: &Vec<Vec<String>>) -> Vec<String> {
                             }
                         },
                         "much" => {
-                            ast.push("FUNCTION".to_string());
+                            line_eval.insert(0, "FUNCTION".to_string());
                             
-                            ast.push(token_line.len().to_string());
+                            line_eval.insert(0, token_line.len().to_string());
+
+                            for _j in 0..token_line.len() {
+                                line_eval.insert(0, token_line.next().unwrap().to_string());
+                            }
+
+                            ast.append(&mut gen_ast(token_lines, i+1, true));
                         },
                         "plz" => {
-                            ast.push("CALL".to_string());
+                            line_eval.insert(0, "CALL".to_string());
                         },
                         "with" => {
                             ()
                         },
                         "wow" => {
-                            ()
+                            if inner_process {
+                                return ast;
+                            }
                         },
                         _ => {
-                            ast.push(token.to_string());
+                            line_eval.insert(0, token.to_string());
                         }
                     }
                 },
                 None => break
             }
         }
+        ast.append(&mut line_eval);
     }
 
     return ast;
@@ -135,7 +145,7 @@ fn main() {
 
     let code_lines = preprocess(&contents);
     let token_lines = tokenize(&code_lines);
-    let ast = gen_ast(&token_lines);
+    let ast = gen_ast(&token_lines, 0, false);
 
     for node in ast {
         println!("{}", node);

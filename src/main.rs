@@ -77,60 +77,96 @@ fn tokenize(lines: &Vec<&str>) -> Vec<Vec<String>> {
 //TODO: Switch insert 0 to push, and then don't do the reverse
 
 //Translate into IR stack
-fn gen_ast<'a, I>(token_lines: &mut I) -> Vec<String>
-where
-    I: Iterator<Item = &'a Vec<String>>
-{
-    let mut ast = Vec::new();
+fn gen_ast2(mut token_lines: Vec<Vec<String>>) -> Vec<String> {
+
+    let mut ast: Vec<String> = Vec::<String>::new();
+
+    let mut temp: Vec<String> = Vec::<String>::new();
+
+    let mut function_count = 0;
 
     loop {
-        match token_lines.next() {
-            Some(line) => {
-                let mut token_line = line.iter();
-                let mut line_eval = Vec::new();
-                loop {
-                    match token_line.next() {
-                        Some(t) => {
-                            let token : &str = t;
-                            match token {
-                                "very" => {
-                                    line_eval.insert(0, "ASSIGN".to_string());
-                                    let variable_name = token_line.next().unwrap();
-                                    line_eval.insert(0, variable_name.to_string());                                                                                                                                             
-                                },
-                                "much" => {
-                                    line_eval.insert(0, "FUNCTION".to_string());
-                                    
-                                    line_eval.insert(0, token_line.len().to_string());
+        
+        if token_lines.len() == 0 {
+            break
+        }
 
-                                    for _j in 0..token_line.len() {
-                                        line_eval.insert(0, token_line.next().unwrap().to_string());
-                                    }
+        let mut token_line = token_lines.pop().unwrap();
 
-                                    ast.append(&mut gen_ast(token_lines));
-                                },
-                                "plz" => {
-                                    line_eval.insert(0, "CALL".to_string());
-                                },                               
-                                "wow" => {
-                                    ast.insert(0, "FUNCTION_END".to_string());
-                                    return ast;
-                                },
-                                _ => {
-                                    line_eval.insert(0, token.to_string());
-                                }
-                            }
-                        },
-                        None => break
+        loop {
+
+            if token_line.len() == 0 {
+                break
+            }
+
+            let token: &str = &token_line.pop().unwrap();
+
+            match token {
+                "very" => {
+                    ast.push("ASSIGN".to_string());
+
+                    loop {
+                        if temp.len() == 0 {
+                            break
+                        }
+                        ast.push(temp.pop().unwrap());
                     }
+                },
+                "wow" => {
+
+                    let mut function_end: String = "FUNCTION_END ".to_string();
+
+                    function_end.push_str(&function_count.to_string());
+                    
+                    ast.push(function_end);
+                },
+                "plz" => {
+                    temp.push("CALL".to_string());
+
+                    loop {
+                        if temp.len() == 0 {
+                            break
+                        }
+                        ast.push(temp.pop().unwrap());
+                    }
+                    
+                },
+                "much" => {
+
+                    let num_args = temp.len();
+
+                    let mut function_start: String = "FUNCTION ".to_string();
+
+                    function_start.push_str(&function_count.to_string());
+
+                    ast.push(function_start);
+                    
+                    ast.push(num_args.to_string());
+                    
+                    loop {
+                       if temp.len() == 0 {
+                           break
+                       }
+                        ast.push(temp.pop().unwrap());
+                    }
+
+                    let mut function_pointer: String = "FUNC ".to_string();
+
+                    function_pointer.push_str(&function_count.to_string());
+
+                    temp.push(function_pointer);
+                    
+                },
+                _ => {
+                    temp.push(token.to_string());
                 }
-                ast.append(&mut line_eval);
-            },
-            None => break
+            }
+            
         }
     }
-    
+
     return ast;
+    
 }
 
 fn interpret(mut stack: Vec<String>) {
@@ -250,13 +286,23 @@ fn interpret(mut stack: Vec<String>) {
                         stack.pop();//pop off remaining function identifier
                         stack.pop();//pop off CALL token
 
+                        // for op in function_body.clone() {
+                        //     println!("{}", op);
+                        // }
+
+                        // println!(" ");
+
                         //TODO: Fix executing backwards part
                         //add function body to stack
                         for _i in 0..function_body.len() {
                             stack.push(function_body.pop().unwrap());
                         }
 
-                        stack_pointer = stack.len() - 1;
+                        // for op in stack.clone() {
+                        //     println!("{}", op);
+                        // }
+
+                        //stack_pointer = stack.len() - 1;
 
                     } else {
                         let func: &str = function_identifier;
@@ -292,7 +338,7 @@ fn main() {
     let filename = "testwow.mdg";
 
     let mut f = File::open(filename).expect("file not found");
-
+    
     let mut contents = String::new();
 
     f.read_to_string(&mut contents)
@@ -300,15 +346,22 @@ fn main() {
 
     let code_lines = preprocess(&contents);
     let token_lines = tokenize(&code_lines);
-    let mut token_lines_iter = token_lines.iter();    
-    let ast = gen_ast(&mut token_lines_iter);
+    let ast = gen_ast2(token_lines);
+    
+    //let mut token_lines_iter = token_lines.iter();
+    //let ast = gen_ast(&mut token_lines_iter);
+
+    for op in ast {
+        println!("{}", op);
+    }
 
     //Reverse the AST for stack operations
-    let mut stack: Vec<String> = Vec::<String>::new();
-    for code in ast.iter().rev() {
-        let token: String = code.to_string();
-        stack.push(token);
-    }
+    //for code in ast {
+    //    let token: String = code.to_string();
+    //    println!("{}", code);
+        //stack.push(token);
+    //}
+
     
-    interpret(stack);
+    //interpret(stack);
 }

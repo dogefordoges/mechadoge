@@ -103,7 +103,6 @@ fn gen_ast2(mut token_lines: Vec<Vec<String>>) -> Vec<String> {
 
             match token {
                 "very" => {
-                    ast.push("ASSIGN".to_string());
 
                     loop {
                         if temp.len() == 0 {
@@ -111,6 +110,8 @@ fn gen_ast2(mut token_lines: Vec<Vec<String>>) -> Vec<String> {
                         }
                         ast.push(temp.pop().unwrap());
                     }
+
+                    ast.push("ASSIGN".to_string());
                 },
                 "wow" => {
 
@@ -118,10 +119,9 @@ fn gen_ast2(mut token_lines: Vec<Vec<String>>) -> Vec<String> {
 
                     function_end.push_str(&function_count.to_string());
                     
-                    ast.push(function_end);
+                    ast.push(function_end);                    
                 },
-                "plz" => {
-                    temp.push("CALL".to_string());
+                "plz" => {                    
 
                     loop {
                         if temp.len() == 0 {
@@ -129,6 +129,8 @@ fn gen_ast2(mut token_lines: Vec<Vec<String>>) -> Vec<String> {
                         }
                         ast.push(temp.pop().unwrap());
                     }
+
+                    ast.push("CALL".to_string());
                     
                 },
                 "much" => {
@@ -154,11 +156,13 @@ fn gen_ast2(mut token_lines: Vec<Vec<String>>) -> Vec<String> {
 
                     function_pointer.push_str(&function_count.to_string());
 
-                    temp.push(function_pointer);
+                    ast.push(function_pointer);
+
+                    function_count = function_count + 1;
                     
                 },
                 _ => {
-                    temp.push(token.to_string());
+                    temp.insert(0, token.to_string());
                 }
             }
             

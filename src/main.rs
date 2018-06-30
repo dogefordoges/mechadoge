@@ -164,7 +164,7 @@ fn interpret(mut stack: Vec<String>) {
                 let function_end = stack.pop().unwrap();
 
                 if function_end != "FUNCTION_END".to_string() {
-                    panic!("FUNCTION DELIMITER NOT FOUND!");
+                    panic!("function delimiter not found");
                 }
 
                 let mut function: Vec<String> = Vec::<String>::new();
@@ -190,12 +190,91 @@ fn interpret(mut stack: Vec<String>) {
             },
             "CALL" => {
                 if !dont_call {
-                    let function_reference = &stack[stack_pointer + 1];
+                    let function_identifier = &stack[stack_pointer + 1].clone();
 
-                    println!("{}", function_reference);                    
+                    let function_pointer = match function_identifier.contains("FUNC") {
+                        true => {
+                            function_identifier
+                        },
+                        false => {
+                            match variable_context.get(function_identifier) {
+                                Some(func) => {
+                                    func
+                                },
+                                None => {
+                                    "NONE"
+                                }
+                            }
+                        }
+                    };
+
+                    if function_pointer != "NONE" {
+                        let (_, index) = function_pointer.split_at(5);
+                        let pointer: usize = index.parse().unwrap();
+
+                        let mut function_body = function_context[pointer].clone();
+
+                        let num_args: i32 = function_body.pop().unwrap().parse().unwrap();
+
+                        let mut function_scope = HashMap::<String, String>::new();
+                        
+                        for _i in 0..num_args {
+                            let param_name: String = function_body.pop().unwrap();
+                            let param: String = stack.pop().unwrap();
+
+                            function_scope.insert(param_name, param);
+                        }
+
+                        //replace param names with param values
+                        let mut i: usize = 0;
+                        loop {
+
+                            if i == function_body.len() {
+                                break
+                            }
+                            
+                            let value = function_scope.get(&function_body[i]);
+
+                            match value {
+                                Some(v) => {
+                                    function_body[i] = v.to_string();
+                                },
+                                None => {
+                                    ()
+                                }
+                            }
+                            
+                            i = i + 1;
+                        }
+
+                        stack.pop();//pop off remaining function identifier
+                        stack.pop();//pop off CALL token
+
+                        //TODO: Fix executing backwards part
+                        //add function body to stack
+                        for _i in 0..function_body.len() {
+                            stack.push(function_body.pop().unwrap());
+                        }
+
+                        stack_pointer = stack.len() - 1;
+
+                    } else {
+                        let func: &str = function_identifier;
+                        match func {
+                            "bark" => {
+                                println!("{}", stack.pop().unwrap());
+                            },
+                            _ => {
+                                panic!("function identifier: {} not found in scope", function_identifier); 
+                            }
+                        }
+                        stack.pop();//pop off remaining function identifier
+                        stack.pop();//pop off CALL token                        
+                    }
                 }
             },
             _ => {
+                //Should be doing assignment here
                 ()
             }
         };

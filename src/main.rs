@@ -74,6 +74,8 @@ fn tokenize(lines: &Vec<&str>) -> Vec<Vec<String>> {
     return tokens;
 }
 
+//TODO: Switch insert 0 to push, and then don't do the reverse
+
 //Translate into IR stack
 fn gen_ast<'a, I>(token_lines: &mut I) -> Vec<String>
 where
@@ -136,10 +138,14 @@ fn interpret(mut stack: Vec<String>) {
     let mut stack_pointer: usize = stack.len() - 1;
     let mut variable_context = HashMap::<String, String>::new();
     let mut function_context = Vec::new();
+
+    let mut dont_call = false;
     
     loop {
 
         let token: &str = &stack[stack_pointer].clone();
+
+        //println!("{} {} {}", token, stack_pointer, stack.len());
         
         match token {
             "ASSIGN" => {
@@ -151,10 +157,13 @@ fn interpret(mut stack: Vec<String>) {
 
                 variable_context.insert(variable_name, variable);
             },
+            "FUNCTION_END" => {
+                dont_call = true;
+            },
             "FUNCTION" => {
-                let end = stack.pop().unwrap();
+                let function_end = stack.pop().unwrap();
 
-                if end != "FUNCTION_END".to_string() {
+                if function_end != "FUNCTION_END".to_string() {
                     panic!("FUNCTION DELIMITER NOT FOUND!");
                 }
 
@@ -176,6 +185,15 @@ fn interpret(mut stack: Vec<String>) {
                 function_context.push(function);
 
                 stack.push(function_pointer);
+
+                dont_call = false;
+            },
+            "CALL" => {
+                if !dont_call {
+                    let function_reference = &stack[stack_pointer + 1];
+
+                    println!("{}", function_reference);                    
+                }
             },
             _ => {
                 ()

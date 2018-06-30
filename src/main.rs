@@ -111,7 +111,7 @@ where
                                     line_eval.insert(0, "CALL".to_string());
                                 },                               
                                 "wow" => {
-                                    ast.insert(0, "DONT_EVAL".to_string());
+                                    ast.insert(0, "FUNCTION_END".to_string());
                                     return ast;
                                 },
                                 _ => {
@@ -131,87 +131,65 @@ where
     return ast;
 }
 
-//Runs through ast and returns stack
-fn interpret(code_ast: &Vec<String>) -> Vec<String> {
-    let mut stack = Vec::<String>::new();
-    let mut context = HashMap::new();
+fn interpret(mut stack: Vec<String>) {
 
-    let mut eval = true;
-
-    for c in code_ast {
-        let opcode: &str = c;
-        
-        if opcode == "FUNCTION" {
-            eval = true;
-        }
-        
-        if eval {
-            match opcode {
-                "ASSIGN" => {
-                    let variable_name = stack.pop();
-                    let value = stack.pop();
-                    context.insert(variable_name, value);
-                },
-                "DONT_EVAL" => {
-                    eval = false;
-                    stack.push("FUNCTION_END".to_string());                   
-                },
-                "CALL" => {
-                    let function_name = stack.pop();
-
-                    if context.contains_key(&function_name) {
-                        let function_body = context.get(&function_name).unwrap();
-                        println!("{:?}", function_body);                        
-                    } else {
-                        panic!("Function not found {}", function_name.unwrap());
-                    }
-                },
-                "FUNCTION" => {
-                    let num_args_str = stack.pop().unwrap();
-                    let num_args: i32 = num_args_str.parse().unwrap();
-
-                    let mut fun = String::new();
-
-                    for _i in 0..num_args {
-                        let arg: String = stack.pop().unwrap();
-                        fun.push_str(&arg);
-                        fun.push_str(" ");
-                    }
-
-                    fun.push_str("| ");
-
-                    loop {
-                        if stack.len() > 0 {
-                            let val: &str = &stack.pop().unwrap();
-                            match val {
-                                "FUNCTION" => {
-                                    fun.push_str(val);
-                                },
-                                "FUNCTION_END" => {                                                              },
-                                _ => {
-                                    fun.push_str(val);
-                                }                           
-                            }
-                            fun.push_str(" ");
-                        } else {
-                            break
-                        }
-                    }
-
-                    stack.push(fun);                                        
-                },
-                _ => {
-                    stack.push(opcode.to_string());
-                }
-            }
-        } else {
-            stack.push(opcode.to_string());
-        }
-    }
+    let mut stack_pointer: usize = stack.len() - 1;
+    let mut variable_context = HashMap::<String, String>::new();
+    let mut function_context = Vec::new();
     
-    return stack;
-}
+    loop {
 
+        let token: &str = &stack[stack_pointer].clone();
+        
+        match token {
+            "ASSIGN" => {
+                let variable = stack.pop().unwrap();
+                let variable_name = stack.pop().unwrap();                
+
+                //pop ASSIGN off stack
+                stack.pop();
+
+                variable_context.insert(variable_name, variable);
+            },
+            "FUNCTION" => {
+                let end = stack.pop().unwrap();
+
+                if end != "FUNCTION_END".to_string() {
+                    panic!("FUNCTION DELIMITER NOT FOUND!");
+                }
+
+                let mut function: Vec<String> = Vec::<String>::new();
+
+                loop {
+                    if stack.len() == stack_pointer {
+                        function.pop();
+                        break
+                    } else {
+                        function.push(stack.pop().unwrap().to_string());
+                    }
+                }
+
+                let mut function_pointer: String = String::new();
+                function_pointer.push_str("FUNC ");
+                function_pointer.push_str(&function_context.len().to_string());
+                
+                function_context.push(function);
+
+                stack.push(function_pointer);
+            },
+            _ => {
+                ()
+            }
+        };
+
+        if stack_pointer > 0 {
+            stack_pointer = stack_pointer - 1;
+        } else {
+            break
+        }
+        
+    }
+}
 
 fn main() {
     let filename = "testwow.mdg";
@@ -225,11 +203,15 @@ fn main() {
 
     let code_lines = preprocess(&contents);
     let token_lines = tokenize(&code_lines);
-    let mut token_lines_iter = token_lines.iter();
+    let mut token_lines_iter = token_lines.iter();    
     let ast = gen_ast(&mut token_lines_iter);
-    let stack = interpret(&ast);
 
-    for value in stack {
-        println!("{}", value);
+    //Reverse the AST for stack operations
+    let mut stack: Vec<String> = Vec::<String>::new();
+    for code in ast.iter().rev() {
+        let token: String = code.to_string();
+        stack.push(token);
     }
+    
+    interpret(stack);
 }

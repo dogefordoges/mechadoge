@@ -27,6 +27,7 @@ fn preprocess(contents: &str) -> Vec<&str> {
     return keeping;
 }
 
+//TODO: Handle strings with no spaces, single words
 
 fn tokenize(lines: &Vec<&str>) -> Vec<Vec<String>> {
 
@@ -74,16 +75,14 @@ fn tokenize(lines: &Vec<&str>) -> Vec<Vec<String>> {
     return tokens;
 }
 
-//TODO: Switch insert 0 to push, and then don't do the reverse
-
 //Translate into IR stack
-fn gen_ast2(mut token_lines: Vec<Vec<String>>) -> Vec<String> {
+fn gen_ast(mut token_lines: Vec<Vec<String>>) -> Vec<String> {
 
     let mut ast: Vec<String> = Vec::<String>::new();
 
     let mut temp: Vec<String> = Vec::<String>::new();
 
-    let mut function_count = 0;
+    let mut function_count: i32 = 1;
 
     loop {
         
@@ -121,6 +120,14 @@ fn gen_ast2(mut token_lines: Vec<Vec<String>>) -> Vec<String> {
                     
                     ast.push(function_end);                    
                 },
+                "with" => {
+                    loop {
+                        if temp.len() == 0 {
+                            break
+                        }
+                        ast.push(temp.pop().unwrap());
+                    }
+                },
                 "plz" => {                    
 
                     loop {
@@ -137,13 +144,9 @@ fn gen_ast2(mut token_lines: Vec<Vec<String>>) -> Vec<String> {
 
                     let num_args = temp.len();
 
-                    let mut function_start: String = "FUNCTION ".to_string();
+                    let mut function_start: String = "FUNCTION_START ".to_string();
 
                     function_start.push_str(&function_count.to_string());
-
-                    ast.push(function_start);
-                    
-                    ast.push(num_args.to_string());
                     
                     loop {
                        if temp.len() == 0 {
@@ -152,7 +155,11 @@ fn gen_ast2(mut token_lines: Vec<Vec<String>>) -> Vec<String> {
                         ast.push(temp.pop().unwrap());
                     }
 
-                    let mut function_pointer: String = "FUNC ".to_string();
+                    ast.push(num_args.to_string());
+
+                    ast.push(function_start);                    
+
+                    let mut function_pointer: String = "FUNCPTR ".to_string();
 
                     function_pointer.push_str(&function_count.to_string());
 
@@ -175,167 +182,159 @@ fn gen_ast2(mut token_lines: Vec<Vec<String>>) -> Vec<String> {
 
 fn interpret(mut stack: Vec<String>) {
 
-    let mut stack_pointer: usize = stack.len() - 1;
+    let mut stack_pointer = stack.len() - 1;
     let mut variable_context = HashMap::<String, String>::new();
-    let mut function_context = Vec::new();
-
-    let mut dont_call = false;
+    let mut function_context = HashMap::<String, Vec<String>>::new();
     
     loop {
 
-        let token: &str = &stack[stack_pointer].clone();
+        let opcode: &str = &stack[stack_pointer].clone();
 
-        //println!("{} {} {}", token, stack_pointer, stack.len());
-        
-        match token {
+        //println!("{} {} {}", opcode, stack_pointer, stack.len());
+
+        match opcode {
+
             "ASSIGN" => {
-                let variable = stack.pop().unwrap();
-                let variable_name = stack.pop().unwrap();                
+                stack.pop();//Pop off ASSIGN
 
-                //pop ASSIGN off stack
-                stack.pop();
-
-                variable_context.insert(variable_name, variable);
-            },
-            "FUNCTION_END" => {
-                dont_call = true;
-            },
-            "FUNCTION" => {
-                let function_end = stack.pop().unwrap();
-
-                if function_end != "FUNCTION_END".to_string() {
-                    panic!("function delimiter not found");
-                }
-
-                let mut function: Vec<String> = Vec::<String>::new();
-
-                loop {
-                    if stack.len() == stack_pointer {
-                        function.pop();
-                        break
-                    } else {
-                        function.push(stack.pop().unwrap().to_string());
-                    }
-                }
-
-                let mut function_pointer: String = String::new();
-                function_pointer.push_str("FUNC ");
-                function_pointer.push_str(&function_context.len().to_string());
+                let variable_name: String = stack.pop().unwrap();
+                stack_pointer = stack_pointer - 1;
                 
-                function_context.push(function);
+                let variable: String = stack.pop().unwrap();
+                stack_pointer = stack_pointer - 1;
 
-                stack.push(function_pointer);
-
-                dont_call = false;
+                variable_context.insert(variable_name, variable);                
             },
             "CALL" => {
-                if !dont_call {
-                    let function_identifier = &stack[stack_pointer + 1].clone();
+                stack.pop();//Pop CALL off of stack
 
-                    let function_pointer = match function_identifier.contains("FUNC") {
-                        true => {
-                            function_identifier
+                let function_name: String = stack.pop().unwrap();
+                stack_pointer = stack_pointer - 1;
+
+                let mut function_pointer: String = function_name.clone();
+
+                if !function_pointer.contains("FUNCPTR") {
+                    match variable_context.get(&function_pointer) {
+                        Some(f_ptr) => {
+                            function_pointer = f_ptr.to_string();
                         },
-                        false => {
-                            match variable_context.get(function_identifier) {
-                                Some(func) => {
-                                    func
-                                },
-                                None => {
-                                    "NONE"
-                                }
-                            }
+                        None => {
+                            function_pointer = "NONE".to_string();
                         }
-                    };
+                    }                    
+                }
 
-                    if function_pointer != "NONE" {
-                        let (_, index) = function_pointer.split_at(5);
-                        let pointer: usize = index.parse().unwrap();
+                if function_pointer != "NONE" {
 
-                        let mut function_body = function_context[pointer].clone();
+                    //Push function body onto stack
+                    
+                    let (_, function_id) = function_pointer.split_at(9);
 
-                        let num_args: i32 = function_body.pop().unwrap().parse().unwrap();
-
-                        let mut function_scope = HashMap::<String, String>::new();
-                        
-                        for _i in 0..num_args {
-                            let param_name: String = function_body.pop().unwrap();
-                            let param: String = stack.pop().unwrap();
-
-                            function_scope.insert(param_name, param);
-                        }
-
-                        //replace param names with param values
-                        let mut i: usize = 0;
-                        loop {
-
-                            if i == function_body.len() {
-                                break
-                            }
+                    match function_context.get(function_id) {
+                        Some(body) => {
                             
-                            let value = function_scope.get(&function_body[i]);
+                            let mut func_body: Vec<String> = body.to_vec().clone();
 
-                            match value {
-                                Some(v) => {
-                                    function_body[i] = v.to_string();
-                                },
-                                None => {
-                                    ()
+                            let num_args: i32 = func_body.pop().unwrap().parse().unwrap();
+                            let mut function_scope: HashMap<String, String> = HashMap::<String, String>::new();
+                            //define scope
+                            for _i in 0..num_args {
+                                function_scope.insert(func_body.pop().unwrap(), stack.pop().unwrap());
+                                stack_pointer = stack_pointer - 1;
+                            }
+
+                            //replace param names with param values
+                            let mut i: usize = 0;
+                            loop {
+
+                                if i == func_body.len() {
+                                    break
                                 }
+                                
+                                let value = function_scope.get(&func_body[i]);
+
+                                match value {
+                                    Some(v) => {
+                                        func_body[i] = v.to_string();
+                                    },
+                                    None => {
+                                        ()
+                                    }
+                                }
+                                
+                                i = i + 1;
                             }
+
+                            //Add function body to stack
+                            for op in func_body {
+                                stack.push(op);
+                            }                            
+
+                            stack_pointer = stack.len();
                             
-                            i = i + 1;
+                        },
+                        None => {
+                            panic!("function {} not found in scope", function_name);
                         }
+                    }                    
+                } else {
+                    let name: &str = &function_name;
+                    match name {
+                        "bark" => {
+                            
+                            println!("{}", stack.pop().unwrap());
+                            stack_pointer = stack_pointer - 1;
 
-                        stack.pop();//pop off remaining function identifier
-                        stack.pop();//pop off CALL token
-
-                        // for op in function_body.clone() {
-                        //     println!("{}", op);
-                        // }
-
-                        // println!(" ");
-
-                        //TODO: Fix executing backwards part
-                        //add function body to stack
-                        for _i in 0..function_body.len() {
-                            stack.push(function_body.pop().unwrap());
                         }
-
-                        // for op in stack.clone() {
-                        //     println!("{}", op);
-                        // }
-
-                        //stack_pointer = stack.len() - 1;
-
-                    } else {
-                        let func: &str = function_identifier;
-                        match func {
-                            "bark" => {
-                                println!("{}", stack.pop().unwrap());
-                            },
-                            _ => {
-                                panic!("function identifier: {} not found in scope", function_identifier); 
-                            }
+                        _ => {
+                            panic!("{} is not defined", function_name); 
                         }
-                        stack.pop();//pop off remaining function identifier
-                        stack.pop();//pop off CALL token                        
                     }
                 }
+                
             },
             _ => {
-                //Should be doing assignment here
-                ()
+
+                if opcode.contains("FUNCTION_START") {
+
+                    let op = stack.pop().unwrap();
+
+                    let (_, ptr) = op.split_at(16);
+
+                    let mut function_body = Vec::<String>::new();
+
+                    loop {
+                        let token: String = stack.pop().unwrap();
+                        stack_pointer = stack_pointer - 1;
+
+                        if token.contains("FUNCTION_END") {
+                            let (_, end_ptr) = token.split_at(14);
+
+                           if ptr == end_ptr {
+                                break
+                            }
+                        }
+
+                        function_body.insert(0, token);
+                    }
+
+                    function_context.insert(ptr.to_string(), function_body);
+
+                } else {
+                    ()
+                }
+                
             }
-        };
+            
+        }
 
         if stack_pointer > 0 {
             stack_pointer = stack_pointer - 1;
         } else {
             break
         }
-        
     }
+
 }
 
 fn main() {
@@ -350,22 +349,6 @@ fn main() {
 
     let code_lines = preprocess(&contents);
     let token_lines = tokenize(&code_lines);
-    let ast = gen_ast2(token_lines);
-    
-    //let mut token_lines_iter = token_lines.iter();
-    //let ast = gen_ast(&mut token_lines_iter);
-
-    for op in ast {
-        println!("{}", op);
-    }
-
-    //Reverse the AST for stack operations
-    //for code in ast {
-    //    let token: String = code.to_string();
-    //    println!("{}", code);
-        //stack.push(token);
-    //}
-
-    
-    //interpret(stack);
+    let ast = gen_ast(token_lines);    
+    interpret(ast);
 }

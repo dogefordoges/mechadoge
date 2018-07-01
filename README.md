@@ -55,7 +55,59 @@ very foobar curly "foo" "bar" boi
 
 Instead of `long` we use the keyword `curly` to start the hashmap. Key value pairs are denoted with two values, so "foo" is the key, and "bar" is the value. Once again we end the hashmap with boi.
 
-## Types
-Mechadoge is dynamically typed but supports a few basic types Integers, Floats, Vectors, Characters, Strings, HashMaps, and Functions. 
+## Comments
 
+Anything after `shh` on a line is commented out
+```
+very doge "foo" ssh this is commented out
+```
+
+We can do multiline comments with `quiet` and `loud`.
+
+```
+quiet
+This is a
+multiline comment
+loud
+```
+
+## Types
+Mechadoge is dynamically typed but supports a few basic types Integers, Floats, Vectors, Characters, Strings, HashMaps, and Functions.
+
+## Modules
+
+To define a module (namespace) in mechadoge use the `such` keyword, and end it with `wow`.
+
+```
+such doge
+   very hello much foo
+      plz bark 'hello'
+   wow
+wow
+```
+
+We can import modules which will import all the methods, or use an alias:
+
+```
+so doge
+
+hello
+```
+
+Or use an alias:
+```
+so doge as d
+
+d.hello
+```
+
+Or to import specific methods
+```
+so doge long hello boi
+
+hello
+```
+
+## File Extension
+mechadoge source code files are defined with a `.mdg`, and longboi data files are `.lboi`.
   

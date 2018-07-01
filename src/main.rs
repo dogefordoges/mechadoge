@@ -222,13 +222,21 @@ fn interpret(mut stack: Vec<String>) {
                             function_pointer = "NONE".to_string();
                         }
                     }                    
+                } else {
+                    //Does contain FUNCPTR
+                    let f: String = function_pointer.clone();
+                    let (_, function_id) = f.split_at(8);
+
+                    if !function_context.contains_key(function_id) {
+                        function_pointer = "NONE".to_string();
+                    }                    
                 }
 
                 if function_pointer != "NONE" {
 
                     //Push function body onto stack
                     
-                    let (_, function_id) = function_pointer.split_at(9);
+                    let (_, function_id) = function_pointer.split_at(8);
 
                     match function_context.get(function_id) {
                         Some(body) => {
@@ -287,7 +295,28 @@ fn interpret(mut stack: Vec<String>) {
 
                         }
                         _ => {
-                            panic!("{} is not defined", function_name); 
+
+                            if function_name.contains("FUNCPTR") {
+                                let (_, function_id) = function_name.split_at(8);
+
+                                let code: String = stack[stack_pointer - 1].clone();
+                                if code.contains("FUNCTION_START") {
+                                    let (_, start_id) = code.split_at(15);
+
+                                    println!("func id: {}", function_id);
+                                    println!("start id: {}", start_id);
+                                    
+                                    if function_id == start_id {
+                                        panic!("{} is not defined", function_name);
+                                    } else {
+                                        panic!("{} is not defined", function_name);
+                                    }                                    
+                                } else {
+                                    panic!("{} is not defined", function_name);
+                                }                                
+                            } else {
+                                panic!("{} is not defined", function_name);
+                            }
                         }
                     }
                 }
@@ -299,7 +328,9 @@ fn interpret(mut stack: Vec<String>) {
 
                     let op = stack.pop().unwrap();
 
-                    let (_, ptr) = op.split_at(16);
+                    let (_, ptr) = op.split_at(15);
+
+                    println!("ptr: {}", ptr);
 
                     let mut function_body = Vec::<String>::new();
 
@@ -308,7 +339,7 @@ fn interpret(mut stack: Vec<String>) {
                         stack_pointer = stack_pointer - 1;
 
                         if token.contains("FUNCTION_END") {
-                            let (_, end_ptr) = token.split_at(14);
+                            let (_, end_ptr) = token.split_at(13);
 
                            if ptr == end_ptr {
                                 break
@@ -349,6 +380,13 @@ fn main() {
 
     let code_lines = preprocess(&contents);
     let token_lines = tokenize(&code_lines);
-    let ast = gen_ast(token_lines);    
+    let ast = gen_ast(token_lines);
+
+    for o in ast.clone() {
+        println!("{}", o);
+    }
+
+    println!(" ");
+    
     interpret(ast);
 }

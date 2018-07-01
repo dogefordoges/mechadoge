@@ -1,7 +1,6 @@
 [package]
-name = "mechadoge"
+name = "mechadoge2"
 version = "0.1.0"
 authors = ["hswick <hdswick@gmail.com>"]
 
 [dependencies]
-regex = "1.0.0"

@@ -10,9 +10,9 @@ Define a variable like so:
 very doge "much wow"
 ```
 
-## Using functions
+## Using Functions
 
-Creating anonymous functions are simple. Use the `much` keyword to start the function, and the rest of the words in that line are considered the parameter name. The last value in the function is returned. And we end the scope of the function with the `wow` keyword.
+Creating an anonymous function is simple. Use the `much` keyword to start the function, and the rest of the words in that line are considered the parameter name. The last value in the function is returned. And we end the scope of the function with the `wow` keyword.
 ```
 much dogefun foo
    foo

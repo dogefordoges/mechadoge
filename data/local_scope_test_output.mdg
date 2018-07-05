@@ -1,6 +1,6 @@
-very fun FUNC_0 0_0 0_1
+very fun FUNC_START_0 0_0 0_1
    plz bark 0_0
-   FUNC_1 1_0
+   FUNC_START_1 1_0
       plz bark 1_0
       plz bark 0_1
    FUNC_END_1

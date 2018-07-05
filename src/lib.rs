@@ -78,7 +78,7 @@ mod processor {
                     function_count = new_function_count;
                 }
 
-                let func_start: String = format!("FUNC_{}", original_function_count.to_string());
+                let func_start: String = format!("FUNC_START_{}", original_function_count.to_string());
 
                 lines[i] = lines[i].replace("much", &func_start);                
                 
@@ -180,12 +180,24 @@ mod processor {
                 variable_count = variable_count + 1;
             }
 
-            for k in global_variable_scope.keys() {                
-                if lines[i].contains(k) {
-                    lines[i] = lines[i].replace(k, global_variable_scope.get(k).unwrap());
+            let l: String = lines[i].clone();
+            let mut split_line: Vec<&str> = l.split(" ").collect();
+
+            let mut t = 0;
+            loop {
+                if t == split_line.len() { break }
+
+                for k in global_variable_scope.keys() {
+                    if split_line[t] == k {
+                        split_line[t] = global_variable_scope.get(k).unwrap();;
+                    }
                 }
+                
+                t = t + 1;
             }
 
+            lines[i] = split_line.join(" ");
+            
             i = i + 1;
         }
 
@@ -257,21 +269,18 @@ mod processor {
         return (lines, string_heap);
     }
 
-    pub fn process_functions(mut lines: Vec<String>) -> Vec<String> {
+    pub fn process_functions(mut lines: Vec<String>) -> (Vec<String>, HashMap<String, Vec<String>>) {
         let mut i = 0;
+        let mut function_heap: HashMap<String, Vec<String>> = HashMap::new();
 
         loop {
             if i == lines.len() {
                 break
             }           
 
-            if lines[i].contains("much") {
+            if lines[i].contains("FUNC_START") {
 
-                let l: String = lines[i].clone();
-               
-                let split_line: Vec<&str> = l.split("much ").collect();
-                let split_args: Vec<&str> = split_line[1].split(" ").collect();
-                let args: Vec<&str> = split_args.to_vec();            
+                let l: String = lines[i].clone();              
 
                 let mut j = i;
                 let mut function_start_counter = 0;
@@ -282,22 +291,22 @@ mod processor {
                     if j == lines.len() {
                         panic!("missing delimiter!");
                     }
-                    
-                    let mut l2: String = lines[j].clone();
 
-                    if l2.contains("much") {
+                    if lines[i].contains("FUNC_START") && function_start_counter == 0 {
+                        let args: Vec<&str> = lines[i].split(" ").skip(0).collect();
+                        let mut function_body: Vec<String> = Vec::<String>::new();
+
+                        function_body.push(args.len().to_string());
+
+                        for arg in args { function_body.push(arg.to_string()) }
+
                         function_start_counter = function_start_counter + 1;
-                    }                
-
-                    if l2.contains("wow") {
-                        function_end_counter = function_end_counter + 1;
+                        
+                    } else if lines[i].contains("FUNC_START") && function_start_counter == 1 {
                     }
-
-                    for index in 0..args.len() {
-                        if l2.contains(args[index]) {
-                            l2 = l2.replace(args[index], &index.to_string());
-                            lines[j] = l2.clone();
-                        }
+                    
+                    if lines[i].contains("FUNC_END") {
+                        function_end_counter = function_end_counter + 1;
                     }
 
                     j = j + 1;
@@ -313,7 +322,7 @@ mod processor {
             
         }
 
-        return lines;
+        return (lines, function_heap);
     }
     
 }
@@ -376,6 +385,17 @@ mod processor_tests {
     fn test_string_processor() {
         let input_lines = read_to_lines("data/string_test_input.mdg");
         let output_lines = read_to_lines("data/string_test_output.mdg");
+        let (output, _) = process_strings(input_lines);
+
+        for i in 0..output.len() {
+            assert_eq!(output[i], output_lines[i]);
+        }
+    }
+
+    #[test]
+    fn test_function_processor() {
+        let input_lines = read_to_lines("data/function_test_input.mdg");
+        let output_lines = read_to_lines("data/function_test_output.mdg");
         let (output, _) = process_strings(input_lines);
 
         for i in 0..output.len() {

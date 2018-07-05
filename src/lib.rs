@@ -58,6 +58,9 @@ mod processor {
                     let mut k = 0;
                     for arg in split_args {
                         let new_arg_name: String = format!("{}_{}", original_function_count.to_string(), k.to_string());
+                        if arg == "much" {
+                            panic!("much is not allowed as an argument name!");
+                        }
                         args.insert(arg.to_string(), new_arg_name);
                         k = k + 1;
                     }
@@ -87,16 +90,22 @@ mod processor {
                 function_end = true;
             }
 
-            for k in args.keys() {
-                let new_arg: String = args.get(k).unwrap().to_string();
-                if lines[i].contains(k) {
-                    lines[i] = lines[i].replace(k, &new_arg);
+            let mut split_line: Vec<&str> = lines[i].split(" ").collect();
+
+            let mut t = 0;
+            loop {
+                if t == split_line.len() { break }
+
+                for k in args.keys() {
+                    if split_line[t] == k {
+                        split_line[t] = args.get(k).unwrap();;
+                    }
                 }
+                
+                t = t + 1;
             }
 
-            let new_line: &str = &lines[i];
-
-            new_lines.push(new_line.to_string());
+            new_lines.push(split_line.join(" "));
 
             if function_end {
                 break
@@ -108,6 +117,7 @@ mod processor {
         return (new_lines, function_count);
     }
 
+    //TODO: optimize by not passing in lines by value
     pub fn process_local_scope(mut lines: Vec<String>) -> Vec<String> {
         let mut i = 0;
         let mut function_count = 0;

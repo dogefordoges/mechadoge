@@ -39,7 +39,7 @@ So what should be output to the screen is "doge". Since we pass a function to do
 
 ## Data structures
 
-mechadoge uses the longboi data format to represent vectors and hashmaps.
+mechadoge uses the longboi data format to represent vectors.
 
 Vectors are represented like this:
 ```
@@ -48,12 +48,11 @@ very foobar long "foo" "bar" boi
 
 Here we assigned the `foobar` variable with a vector that contains two items, "foo" and "bar". Elements are separated with spaces. The end of the vector is denoted with boi.
 
-Hashmaps are defined similarly, but with a few differences.
-```
-very foobar curly "foo" "bar" boi
-```
+If a long boi array has an even number of elements it can be converted into a hashmap with the `curly` function. 
 
-Instead of `long` we use the keyword `curly` to start the hashmap. Key value pairs are denoted with two values, so "foo" is the key, and "bar" is the value. Once again we end the hashmap with boi.
+```
+very foobar curly long "foo" "bar" boi
+```
 
 ## Comments
 

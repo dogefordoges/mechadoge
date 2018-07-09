@@ -361,21 +361,54 @@ mod processor {
 
         return (final_lines, function_heap);
     }
+
+    fn array_helper(lines: Vec<String>, line_number: usize, mut array_count: usize) -> (Vec<String>, HashMap<String, Vec<String>>, usize) {
+        let mut new_lines: Vec<String> = Vec::<String>::new();
+        let mut new_heap: HashMap<String, Vec<String>> = HashMap::new();
+
+        return (new_lines, new_heap, array_count);
+    }
+
+    pub fn process_arrays(mut lines: Vec<String>) -> (Vec<String>, HashMap<String, Vec<String>>) {
+        let mut i: usize = 0;
+        let mut array_heap: HashMap<String, Vec<String>> = HashMap::new();
+        let mut array_count: usize = 0;
+
+        loop {
+
+            if i == lines.len() {
+                break
+            }
+
+            if lines[i].contains("long") {
+                let l: String = lines[i].clone();
+                let tokens: Vec<&str> = l.split(" ").collect();
+
+                if tokens.clone().iter().any(|t| t == &"long") {
+                    let (new_lines, new_heap, new_array_count) = array_helper(lines.clone(), i, array_count);
+
+                    let len: usize = new_lines.len();
+
+                    for j in 0..len {
+                        lines[i+j] = new_lines[j].clone();
+                    }
+
+                    array_heap.extend(new_heap);
+
+                    array_count = new_array_count;
+                }
+
+                i = i + 1;
+            } else {
+                i = i + 1;
+            }
+        }
+
+        return (lines, array_heap);
+    }
     
 }
 
-fn array_processor(lines: Vec<String>) -> (Vec<String>, HashMap<String, Vec<String>>) {
-    let mut i = 0;
-
-    loop {
-
-        if i == lines.len() {
-            break
-        }
-
-        i = i + 1;
-    }
-}
 
 #[cfg(test)]
 mod processor_tests {
@@ -465,6 +498,29 @@ mod processor_tests {
         for i in 0..output.len() {
             assert_eq!(output[i], output_lines[i]);
         }
+    }
+
+    #[test]
+    fn test_array_processor() {
+        let input_lines = read_to_lines("data/array_test_input.mdg");
+        let output_lines = read_to_lines("data/array_test_output.mdg");
+        let (output, output_heap): (Vec<String>, HashMap<String, Vec<String>>) = process_arrays(input_lines);
+
+        let array_body_lines = read_to_lines("data/array_body_test.txt");
+        let array_body: Vec<String> = output_heap.get("ARR_START_0").unwrap().to_vec();
+
+        assert_eq!(array_body.len(), array_body_lines.len());
+
+        for i in 0..array_body.len() {
+            assert_eq!(array_body[i], array_body_lines[i]);
+        }
+
+        assert_eq!(output.len(), output_lines.len());
+
+        for i in 0..output.len() {
+            assert_eq!(output[i], output_lines[i]);
+        }
+        
     }
 
 }

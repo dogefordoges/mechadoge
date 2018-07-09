@@ -362,49 +362,73 @@ mod processor {
         return (final_lines, function_heap);
     }
 
-    fn array_helper(lines: Vec<String>, line_number: usize, mut array_count: usize) -> (Vec<String>, HashMap<String, Vec<String>>, usize) {
-        let mut new_lines: Vec<String> = Vec::<String>::new();
+    fn array_helper(tokens: Vec<String>, token_number: usize, mut array_count: usize) -> (Vec<String>, HashMap<String, Vec<String>>, usize) {
+        let mut new_tokens: Vec<String> = Vec::<String>::new();
         let mut new_heap: HashMap<String, Vec<String>> = HashMap::new();
+        let mut array_body: Vec<String> = Vec::<String>::new();
 
-        return (new_lines, new_heap, array_count);
+        let mut i = token_number;
+        let mut array_pointer: String = String::new();
+
+        loop {
+
+            if i == tokens.len() {
+                panic!("Missing array delimiter!");
+            }
+
+            if tokens[i] == "long" {
+                array_pointer = format!("ARR_START_{}", array_count);
+                new_tokens.push(array_pointer.to_string());
+
+                array_count = array_count + 1;
+            } else if tokens[i] == "boi" {
+                new_heap.insert(array_pointer, array_body);
+                new_tokens.push("".to_string());
+                break
+            } else {
+                array_body.push(tokens[i].clone());
+                new_tokens.push("".to_string());                
+            }
+
+            i = i + 1;
+        }
+
+        return (new_tokens, new_heap, array_count);
     }
 
-    pub fn process_arrays(mut lines: Vec<String>) -> (Vec<String>, HashMap<String, Vec<String>>) {
+    pub fn process_arrays(mut tokens: Vec<String>) -> (Vec<String>, HashMap<String, Vec<String>>) {
         let mut i: usize = 0;
         let mut array_heap: HashMap<String, Vec<String>> = HashMap::new();
         let mut array_count: usize = 0;
 
         loop {
 
-            if i == lines.len() {
+            if i == tokens.len() {
                 break
             }
 
-            if lines[i].contains("long") {
-                let l: String = lines[i].clone();
-                let tokens: Vec<&str> = l.split(" ").collect();
+            if tokens[i] == "long" {
+                let (new_tokens, new_heap, new_array_count) = array_helper(tokens.clone(), i, array_count);
 
-                if tokens.clone().iter().any(|t| t == &"long") {
-                    let (new_lines, new_heap, new_array_count) = array_helper(lines.clone(), i, array_count);
+                let len: usize = new_tokens.len();
 
-                    let len: usize = new_lines.len();
-
-                    for j in 0..len {
-                        lines[i+j] = new_lines[j].clone();
-                    }
-
-                    array_heap.extend(new_heap);
-
-                    array_count = new_array_count;
+                for j in 0..len {
+                    tokens[i+j] = new_tokens[j].clone();
                 }
 
-                i = i + 1;
+                array_heap.extend(new_heap);
+
+                array_count = new_array_count;
+
+                i = i + len;
             } else {
                 i = i + 1;
             }
         }
 
-        return (lines, array_heap);
+        let final_tokens: Vec<String> = tokens.iter().filter(|t| t != &"").map(|t| t.to_string()).collect();
+
+        return (final_tokens, array_heap);
     }
     
 }
@@ -431,6 +455,20 @@ mod processor_tests {
 
         return lines;
     }
+
+    fn read_to_tokens(filename: &str) -> Vec<String> {
+        let mut f = File::open(filename).expect("file not found");
+        let mut contents = String::new();
+
+        f.read_to_string(&mut contents)
+            .expect("something went wrong reading the file");
+
+        let mut tokens = Vec::<String>::new();
+
+        contents.split(" ").for_each( |token| tokens.push(token.to_string()));
+
+        return tokens;
+    }    
     
     #[test]
     fn test_comment_processor() {
@@ -502,9 +540,9 @@ mod processor_tests {
 
     #[test]
     fn test_array_processor() {
-        let input_lines = read_to_lines("data/array_test_input.mdg");
-        let output_lines = read_to_lines("data/array_test_output.mdg");
-        let (output, output_heap): (Vec<String>, HashMap<String, Vec<String>>) = process_arrays(input_lines);
+        let input_tokens = read_to_tokens("data/array_test_input.mdg");
+        let output_tokens = read_to_tokens("data/array_test_output.mdg");
+        let (output, output_heap): (Vec<String>, HashMap<String, Vec<String>>) = process_arrays(input_tokens);
 
         let array_body_lines = read_to_lines("data/array_body_test.txt");
         let array_body: Vec<String> = output_heap.get("ARR_START_0").unwrap().to_vec();
@@ -515,10 +553,10 @@ mod processor_tests {
             assert_eq!(array_body[i], array_body_lines[i]);
         }
 
-        assert_eq!(output.len(), output_lines.len());
+        assert_eq!(output.len(), output_tokens.len());
 
         for i in 0..output.len() {
-            assert_eq!(output[i], output_lines[i]);
+            assert_eq!(output[i], output_tokens[i]);
         }
         
     }

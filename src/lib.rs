@@ -269,6 +269,66 @@ mod processor {
         return (lines, string_heap);
     }
 
+    fn function_helper(lines: Vec<String>, line_number: usize) -> (Vec<String>, HashMap<String, Vec<String>>) {
+        let mut i = line_number;
+
+        let mut function_heap: HashMap<String, Vec<String>> = HashMap::new();
+        let mut new_lines: Vec<String> = Vec::<String>::new();
+
+        let mut function_body: Vec<String> = Vec::<String>::new();
+        let mut func_pointer: &str = "";
+        let mut start_number: &str = "";
+
+        loop {
+            
+            if i == lines.len() {
+                panic!("Missing delimiter!");
+            }
+
+            if lines[i].contains("FUNC_START") {
+
+                let split_line: Vec<&str> = lines[i].split(" ").collect();
+
+                func_pointer = split_line[0];
+
+                let split_pointer: Vec<&str> = func_pointer.split("_").collect();
+
+                start_number = split_pointer[2];
+
+                let args: Vec<&str> = split_line[1..split_line.len()].to_vec();
+
+                function_body.push(args.len().to_string());
+                for arg in args { function_body.push(arg.to_string()) }
+                
+                new_lines.push(split_line[0].to_string());
+                
+            } else if lines[i].contains("FUNC_END") {
+                let line2: String = lines[i].clone();
+                let split_line2: Vec<&str> = line2.split("_").collect();
+                let end_number: &str = split_line2[2];
+
+                function_heap.insert(func_pointer.to_string(), function_body.clone());
+
+                new_lines.push("".to_string());
+
+                if end_number == start_number {
+                    break
+                }                     
+                
+            } else {
+                let tokens: Vec<&str> = lines[i].split(" ").filter(|t| t != &"" && t != &" ").collect();
+
+                for t in tokens { function_body.push(t.to_string()) }
+
+                new_lines.push("".to_string());
+            }            
+
+            i = i + 1;
+        }
+
+        return (new_lines, function_heap);
+    }
+
     pub fn process_functions(mut lines: Vec<String>) -> (Vec<String>, HashMap<String, Vec<String>>) {
         let mut i = 0;
         let mut function_heap: HashMap<String, Vec<String>> = HashMap::new();
@@ -276,55 +336,45 @@ mod processor {
         loop {
             if i == lines.len() {
                 break
-            }           
+            }    
 
             if lines[i].contains("FUNC_START") {
+                let (new_lines, new_heap) = function_helper(lines.clone(), i);
 
-                let l: String = lines[i].clone();              
+                let len = new_lines.len();
 
-                let mut j = i;
-                let mut function_start_counter = 0;
-                let mut function_end_counter = 0;
-
-                loop {
-                    
-                    if j == lines.len() {
-                        panic!("missing delimiter!");
-                    }
-
-                    if lines[i].contains("FUNC_START") && function_start_counter == 0 {
-                        let args: Vec<&str> = lines[i].split(" ").skip(0).collect();
-                        let mut function_body: Vec<String> = Vec::<String>::new();
-
-                        function_body.push(args.len().to_string());
-
-                        for arg in args { function_body.push(arg.to_string()) }
-
-                        function_start_counter = function_start_counter + 1;
-                        
-                    } else if lines[i].contains("FUNC_START") && function_start_counter == 1 {
-                    }
-                    
-                    if lines[i].contains("FUNC_END") {
-                        function_end_counter = function_end_counter + 1;
-                    }
-
-                    j = j + 1;
-
-                    if function_start_counter == function_end_counter {
-                        break
-                    }                    
- 
+                for j in 0..new_lines.len() {
+                    lines[i+j] = new_lines[j].clone();
                 }
-            }
-            
-            i = i + 1;
+
+                function_heap.extend(new_heap);
+
+                i = i + len;
+                
+            } else {
+                i = i + 1;         
+            }            
             
         }
 
-        return (lines, function_heap);
+        let final_lines: Vec<String> = lines.iter().filter(|l| l != &"").map(|l| l.to_string()).collect();
+
+        return (final_lines, function_heap);
     }
     
+}
+
+fn array_processor(lines: Vec<String>) -> (Vec<String>, HashMap<String, Vec<String>>) {
+    let mut i = 0;
+
+    loop {
+
+        if i == lines.len() {
+            break
+        }
+
+        i = i + 1;
+    }
 }
 
 #[cfg(test)]
@@ -332,7 +382,8 @@ mod processor_tests {
 
     use std::fs::File;
     use std::io::prelude::*;
-    use processor::*;    
+    use processor::*;
+    use std::collections::HashMap;    
 
     fn read_to_lines(filename: &str) -> Vec<String> {
         let mut f = File::open(filename).expect("file not found");
@@ -396,7 +447,20 @@ mod processor_tests {
     fn test_function_processor() {
         let input_lines = read_to_lines("data/function_test_input.mdg");
         let output_lines = read_to_lines("data/function_test_output.mdg");
-        let (output, _) = process_strings(input_lines);
+        
+        let (output, output_heap): (Vec<String>, HashMap<String, Vec<String>>) = process_functions(input_lines);
+
+        let function_body_lines = read_to_lines("data/function_body_test.txt");
+
+        let func_body: Vec<String> = output_heap.get("FUNC_START_0").unwrap().to_vec();
+
+        assert_eq!(func_body.len(), function_body_lines.len());
+
+        for i in 0..func_body.len() {
+            assert_eq!(func_body[i], function_body_lines[i]);
+        }
+
+        assert_eq!(output.len(), output_lines.len());
 
         for i in 0..output.len() {
             assert_eq!(output[i], output_lines[i]);

@@ -368,7 +368,7 @@ mod processor {
         let mut array_body: Vec<String> = Vec::<String>::new();
 
         let mut i = token_number;
-        let mut array_pointer: String = String::new();
+        let mut array_pointer: String = "".to_string();
 
         loop {
 
@@ -376,21 +376,41 @@ mod processor {
                 panic!("Missing array delimiter!");
             }
 
-            if tokens[i] == "long" {
+            if tokens[i] == "long" && array_pointer != "" {
+                let (newest_tokens, newest_heap, new_array_count) = array_helper(tokens.clone(), i, array_count);
+
+                array_body.push(newest_tokens[0].clone());
+
+                new_heap.extend(newest_heap.clone());
+
+                array_count = new_array_count;
+
+                let mut num_skip_tokens: usize = 0;
+
+                for k in newest_heap.keys() {
+                    let len: usize = newest_heap.get(k).unwrap().len();
+
+                    num_skip_tokens = num_skip_tokens + (len + 2);
+                }
+
+                for _ in 0..num_skip_tokens { new_tokens.push("".to_string()) }
+
+                i = i + num_skip_tokens;
+                
+            } else if tokens[i] == "long" {
                 array_pointer = format!("ARR_START_{}", array_count);
                 new_tokens.push(array_pointer.to_string());
-
                 array_count = array_count + 1;
+                i = i + 1;
             } else if tokens[i] == "boi" {
                 new_heap.insert(array_pointer, array_body);
-                new_tokens.push("".to_string());
+                new_tokens.push("".to_string());                
                 break
             } else {
                 array_body.push(tokens[i].clone());
-                new_tokens.push("".to_string());                
-            }
-
-            i = i + 1;
+                new_tokens.push("".to_string());
+                i = i + 1;
+            }            
         }
 
         return (new_tokens, new_heap, array_count);
@@ -426,7 +446,7 @@ mod processor {
             }
         }
 
-        let final_tokens: Vec<String> = tokens.iter().filter(|t| t != &"").map(|t| t.to_string()).collect();
+        let final_tokens: Vec<String> = tokens.iter().filter(|t| t != &"" && t != &" ").map(|t| t.to_string()).collect();
 
         return (final_tokens, array_heap);
     }

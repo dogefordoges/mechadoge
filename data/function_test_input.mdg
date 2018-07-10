@@ -1,4 +1,4 @@
-FUNC_START_0
+very GLOBAL_0 FUNC_START_0
   plz bark "doge"
   FUNC_START_1
     plz bark "doges"

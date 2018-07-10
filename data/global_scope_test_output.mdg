@@ -1,7 +1,7 @@
-very 0 "doggo"
+very GLOBAL_0 "doggo"
 
-plz bark 0
+plz bark GLOBAL_0
 
-very 1 "bark"
+very GLOBAL_1 "bark"
 
-plz bark 1
+plz bark GLOBAL_1

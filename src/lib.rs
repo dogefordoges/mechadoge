@@ -175,7 +175,7 @@ mod processor {
 
                 let variable_name: String = split_line2[0].to_string();
 
-                global_variable_scope.insert(variable_name, variable_count.to_string());
+                global_variable_scope.insert(variable_name, format!("GLOBAL_{}", variable_count.to_string()));
 
                 variable_count = variable_count + 1;
             }
@@ -255,7 +255,7 @@ mod processor {
 
                 let new_str: String = mechadoge_str.into_iter().collect();
 
-                lines[i] = lines[i].replace(&new_str, &string_count.to_string());
+                lines[i] = lines[i].replace(&new_str, &format!("STR_{}", string_count.to_string()));
 
                 string_heap.insert(string_count.to_string(), new_str);
 
@@ -303,18 +303,39 @@ mod processor {
 
                 let split_line: Vec<&str> = lines[i].split(" ").filter(|t| t != &"" && t != &" ").collect();
 
-                func_pointer = split_line[0];
+                let mut j = 0;
+                loop {
+                    if j == split_line.len() {
+                        panic!("FUNC_START not found, something terrible has happened!");
+                    }
+
+                    if split_line[j].contains("FUNC_START") {
+                        func_pointer = split_line[j];
+                        j = j + 1;
+                        break
+                    }
+
+                    j = j + 1;
+                }
 
                 let split_pointer: Vec<&str> = func_pointer.split("_").collect();
 
                 start_number = split_pointer[2];
 
-                let args: Vec<&str> = split_line[1..split_line.len()].to_vec();
+                let args: Vec<&str> = split_line[j..split_line.len()].to_vec();
 
                 function_body.push(args.len().to_string());
                 for arg in args { function_body.push(arg.to_string()) }
+
+                let mut new_line: String = String::new();
+
+                for k in 0..j {
+                    new_line.push_str(split_line[k]);
+                    new_line.push_str(" ");
+                }
+
+                new_lines.push(new_line.trim().to_string());
                 
-                new_lines.push(split_line[0].to_string());
                 i = i + 1;
                 
             } else if lines[i].contains("FUNC_END") {
@@ -464,6 +485,39 @@ mod processor {
 
         return (final_tokens, array_heap);
     }
+
+    pub struct Context {
+        string_heap: HashMap<String, String>,
+        function_heap: HashMap<String, Vec<String>>,
+        array_heap: HashMap<String, Vec<String>>,
+    }
+
+    pub fn preprocess_code(lines: Vec<String>) -> (Vec<String>, Context) {
+        let processed_comments: Vec<String> = process_comments(lines);
+        let processed_local_scope: Vec<String> = process_local_scope(processed_comments);
+        let processed_global_scope: Vec<String> = process_global_scope(processed_local_scope);
+        let (processed_strings, string_heap) = process_strings(processed_global_scope);
+        let (processed_functions, function_heap) = process_functions(processed_strings);
+
+        let mut tokens: Vec<String> = Vec::<String>::new();
+
+        for l in processed_functions {
+            let line_tokens: Vec<String> = l.split(" ").map(|t| t.to_string()).collect();
+            for t in line_tokens {
+                tokens.push(t);
+            }
+        }
+        
+        let (processed_arrays, array_heap) = process_arrays(tokens);
+
+        let context = Context {
+            string_heap: string_heap,
+            function_heap: function_heap,
+            array_heap: array_heap
+        };
+
+        return (processed_arrays, context);
+    }
     
 }
 
@@ -593,6 +647,19 @@ mod processor_tests {
             assert_eq!(output[i], output_tokens[i]);
         }
         
+    }
+
+    #[test]
+    fn test_preprocessor() {
+        let input_lines = read_to_lines("data/preprocessor_test_input.mdg");
+        let output_tokens = read_to_tokens("data/preprocessor_test_output.txt");
+        let (output, context): (Vec<String>, Context) = preprocess_code(input_lines);
+
+        assert_eq!(output.len(), output_tokens.len());
+
+        for i in 0..output.len() {
+            assert_eq!(output[i], output_tokens[i]);
+        }
     }
 
 }

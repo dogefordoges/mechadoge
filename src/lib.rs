@@ -652,9 +652,19 @@ mod processor_tests {
     #[test]
     fn test_preprocessor() {
         let input_lines = read_to_lines("data/preprocessor_test_input.mdg");
-        let output_tokens = read_to_tokens("data/preprocessor_test_output.txt");
+        let output_tokens = read_to_lines("data/preprocessor_test_output.txt");
         let (output, context): (Vec<String>, Context) = preprocess_code(input_lines);
 
+        match File::create("data/preprocessor_out.txt") {
+            Ok(f) => {
+                let mut file = f;
+                for t in output.clone() {
+                    write!(file, "{}\n", t);
+                }
+            },
+            Err(e) => { panic!("{}", e) }
+        }
+        
         assert_eq!(output.len(), output_tokens.len());
 
         for i in 0..output.len() {

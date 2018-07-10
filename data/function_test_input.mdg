@@ -1,5 +1,8 @@
-very GLOBAL_0 FUNC_START_0
+very GLOBAL_0 STR_0
+
+very GLOBAL_1 FUNC_START_0 0_0
   plz bark "doge"
+  plz bark 0_0
   FUNC_START_1
     plz bark "doges"
   FUNC_END_1

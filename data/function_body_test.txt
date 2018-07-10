@@ -1,5 +1,9 @@
-0
+1
+0_0
 plz
 bark
 "doge"
+plz
+bark
+0_0
 FUNC_START_1

@@ -2,3 +2,4 @@
 plz
 bark
 "doge"
+FUNC_START_1

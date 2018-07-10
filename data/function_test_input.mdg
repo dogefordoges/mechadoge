@@ -1,3 +1,6 @@
 FUNC_START_0
   plz bark "doge"
+  FUNC_START_1
+    plz bark "doges"
+  FUNC_END_1
 FUNC_END_0

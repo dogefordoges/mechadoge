@@ -285,9 +285,23 @@ mod processor {
                 panic!("Missing delimiter!");
             }
 
-            if lines[i].contains("FUNC_START") {
+            if lines[i].contains("FUNC_START") && func_pointer != "" {
+                let (newest_lines, newest_heap) = function_helper(lines.clone(), i);
+                function_body.push(newest_lines[0].clone());
 
-                let split_line: Vec<&str> = lines[i].split(" ").collect();
+                let len: usize = newest_lines.len();
+
+                for j in 1..newest_lines.len() { new_lines.push(newest_lines[j].clone()) }
+
+                new_lines.push("".to_string());
+
+                function_heap.extend(newest_heap);
+
+                i = i + len;
+
+            } else if lines[i].contains("FUNC_START") {
+
+                let split_line: Vec<&str> = lines[i].split(" ").filter(|t| t != &"" && t != &" ").collect();
 
                 func_pointer = split_line[0];
 
@@ -301,6 +315,7 @@ mod processor {
                 for arg in args { function_body.push(arg.to_string()) }
                 
                 new_lines.push(split_line[0].to_string());
+                i = i + 1;
                 
             } else if lines[i].contains("FUNC_END") {
                 let line2: String = lines[i].clone();
@@ -313,7 +328,7 @@ mod processor {
 
                 if end_number == start_number {
                     break
-                }                     
+                }
                 
             } else {
                 let tokens: Vec<&str> = lines[i].split(" ").filter(|t| t != &"" && t != &" ").collect();
@@ -321,9 +336,8 @@ mod processor {
                 for t in tokens { function_body.push(t.to_string()) }
 
                 new_lines.push("".to_string());
+                i = i + 1;
             }            
-
-            i = i + 1;
         }
 
         return (new_lines, function_heap);
@@ -336,7 +350,7 @@ mod processor {
         loop {
             if i == lines.len() {
                 break
-            }    
+            }
 
             if lines[i].contains("FUNC_START") {
                 let (new_lines, new_heap) = function_helper(lines.clone(), i);

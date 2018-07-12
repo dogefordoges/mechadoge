@@ -257,11 +257,15 @@ pub fn process_strings(mut lines: Vec<String>) -> (Vec<String>, HashMap<String, 
                 j = j + 1;
             }
 
-            let new_str: String = mechadoge_str.into_iter().collect();
+            let mut new_str: String = mechadoge_str.into_iter().collect();
 
-            lines[i] = lines[i].replace(&new_str, &format!("STR_{}", string_count.to_string()));
+            let string_pointer: String = format!("STR_{}", string_count);
 
-            string_heap.insert(string_count.to_string(), new_str);
+            lines[i] = lines[i].replace(&new_str, &string_pointer);
+
+            new_str.retain(|c| c != '"');
+
+            string_heap.insert(string_pointer, new_str);
 
             string_count = string_count + 1;
         } else {
@@ -596,7 +600,10 @@ mod processor_tests {
     fn test_string_processor() {
         let input_lines = read_to_lines("data/string_test_input.mdg");
         let output_lines = read_to_lines("data/string_test_output.mdg");
-        let (output, _) = process_strings(input_lines);
+        let (output, string_heap) = process_strings(input_lines);
+
+        assert_eq!("all your base belong to us", string_heap.get("STR_0").unwrap());
+        assert_eq!("- mechadoge", string_heap.get("STR_1").unwrap());
 
         for i in 0..output.len() {
             assert_eq!(output[i], output_lines[i]);

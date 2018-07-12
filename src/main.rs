@@ -78,7 +78,7 @@ fn interpret(mut tokens: Vec<String>, context: processor::Context) {
                             if value.contains("STR") {
                                 if context.string_heap.contains_key(&value) {
                                     let str_value: String = context.string_heap.get(&value).unwrap().to_string();
-                                    println!("{}", value);                                    
+                                    println!("{}", str_value);                                    
                                 } else {
                                     panic!("string: {} not found", value);
                                 }                                

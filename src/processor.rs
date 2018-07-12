@@ -491,9 +491,9 @@ pub fn process_arrays(mut tokens: Vec<String>) -> (Vec<String>, HashMap<String, 
 }
 
 pub struct Context {
-    string_heap: HashMap<String, String>,
-    function_heap: HashMap<String, Vec<String>>,
-    array_heap: HashMap<String, Vec<String>>,
+    pub string_heap: HashMap<String, String>,
+    pub function_heap: HashMap<String, Vec<String>>,
+    pub array_heap: HashMap<String, Vec<String>>,
 }
 
 pub fn preprocess_code(lines: Vec<String>) -> (Vec<String>, Context) {

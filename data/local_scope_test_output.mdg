@@ -1,0 +1,17 @@
+very doge "doges"
+
+very fun FUNC_START_0 0_0 0_1
+   plz bark 0_0
+   FUNC_START_1 1_0
+      plz bark 1_0
+      plz bark 0_1
+   FUNC_END_1
+FUNC_END_0
+
+very funtoo plz fun "doges"
+
+plz funtoo "other doges"
+
+very fun2 FUNC_START_2
+   plz bark "bro"
+FUNC_END_2

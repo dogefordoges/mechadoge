@@ -18,13 +18,17 @@ mod processor {
                             }
                         }
                     } else {
-                        if line.contains("shh") {
-                            let split_line: Vec<&str> = line.split(" shh").collect();
+                        let mut i = 0;                        
+                        let tokens: Vec<&str> = line.split(" ").collect();
+                        loop {
+                            if i == tokens.len() { break }
+                            if tokens[i] == "shh" {
+                                break
+                            }
+                            i = i + 1;
+                        }
 
-                            keeping.push(split_line[0].to_string());
-                        } else {
-                            keeping.push(line.to_string());
-                        }                    
+                        keeping.push(tokens[0..i].join(" "));
                     }
                 },
                 None => { break }
@@ -649,64 +653,25 @@ mod processor_tests {
     }
 
     #[test]
-    fn test_intermediate_preprocessing() {
-        let input_lines = read_to_lines("data/preprocessor_test_input.mdg");
-        
-        let processed_comments: Vec<String> = process_comments(input_lines.clone());
-
-        for i in 0..processed_comments.len() { assert_eq!(input_lines[i], processed_comments[i]); }       
-        
-        let processed_local_scope: Vec<String> = process_local_scope(processed_comments);
-
-        let local_scope_lines = read_to_lines("data/preprocessor_local_scope_output.mdg");
-
-        for i in 0..processed_local_scope.len() { assert_eq!(processed_local_scope[i], local_scope_lines[i]); }
-        // let processed_global_scope: Vec<String> = process_global_scope(processed_local_scope);
-        // let (processed_strings, string_heap) = process_strings(processed_global_scope);
-        // let (processed_functions, function_heap) = process_functions(processed_strings);
-
-        // let mut tokens: Vec<String> = Vec::<String>::new();
-
-        // for l in processed_functions {
-        //     let line_tokens: Vec<String> = l.split(" ").map(|t| t.to_string()).collect();
-        //     for t in line_tokens {
-        //         tokens.push(t);
-        //     }
-        // }
-        
-        // let (processed_arrays, array_heap) = process_arrays(tokens);
-
-        // let context = Context {
-        //     string_heap: string_heap,
-        //     function_heap: function_heap,
-        //     array_heap: array_heap
-        // };
-
-        // return (processed_arrays, context);
-
-    }
-
-    #[test]
     fn test_preprocessor() {
-        // let input_lines = read_to_lines("data/preprocessor_test_input.mdg");
-        // let output_tokens = read_to_lines("data/preprocessor_test_output.txt");
-        // let (output, context): (Vec<String>, Context) = preprocess_code(input_lines);
+        let input_lines = read_to_lines("data/preprocessor_test_input.mdg");
+        let output_tokens = read_to_lines("data/preprocessor_test_output.txt");
+        let (output, context): (Vec<String>, Context) = preprocess_code(input_lines);
 
-        // match File::create("data/preprocessor_out.txt") {
-        //     Ok(f) => {
-        //         let mut file = f;
-        //         for t in output.clone() {
-        //             write!(file, "{}\n", t);
-        //         }
-        //     },
-        //     Err(e) => { panic!("{}", e) }
-        // }
+        match File::create("data/preprocessor_out.txt") {
+            Ok(f) => {
+                let mut file = f;
+                for t in output.clone() {
+                    write!(file, "{}\n", t);
+                }
+            },
+            Err(e) => { panic!("{}", e) }
+        }
         
-        // assert_eq!(output.len(), output_tokens.len());
+        assert_eq!(output.len(), output_tokens.len());
 
-        // for i in 0..output.len() {
-        //     assert_eq!(output[i], output_tokens[i]);
-        // }
+        for i in 0..output.len() {
+            assert_eq!(output[i], output_tokens[i]);
+        }
     }
-
 }

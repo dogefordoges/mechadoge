@@ -28,7 +28,7 @@ fn interpret(mut tokens: Vec<String>, context: processor::Context) {
 
         let token: &str = &stack.pop().unwrap();
 
-        println!("{}", token);
+        //println!("{}", token);
 
         match token {
             "very" => {
@@ -82,6 +82,18 @@ fn interpret(mut tokens: Vec<String>, context: processor::Context) {
                                 } else {
                                     panic!("string: {} not found", value);
                                 }                                
+                            } else if global_variables.contains_key(&value) {
+                                let global_variable: String = global_variables.get(&value).unwrap().to_string();
+
+                                if global_variable.contains("STR") {
+                                    if context.string_heap.contains_key(&global_variable) {
+                                        let str_value: String = context.string_heap.get(&global_variable).unwrap().to_string();
+                                        println!("{}", str_value);                                    
+                                    } else {
+                                        panic!("string: {} not found", global_variable);
+                                    }
+                                }
+                                
                             } else {
                                 panic!("mechadoge can't bark: {}", value);
                             }

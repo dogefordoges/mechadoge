@@ -57,16 +57,19 @@ mod processor {
                     let l: String = lines[i].clone();
 
                     let split_line: Vec<&str> = l.split("much ").collect();
-                    let split_args: Vec<&str> = split_line[1].split(" ").collect();
 
-                    let mut k = 0;
-                    for arg in split_args {
-                        let new_arg_name: String = format!("{}_{}", original_function_count.to_string(), k.to_string());
-                        if arg == "much" {
-                            panic!("much is not allowed as an argument name!");
-                        }
-                        args.insert(arg.to_string(), new_arg_name);
-                        k = k + 1;
+                    if split_line.len() > 1 {
+                        let split_args: Vec<&str> = split_line[1].split(" ").collect();
+
+                        let mut k = 0;
+                        for arg in split_args {
+                            let new_arg_name: String = format!("{}_{}", original_function_count.to_string(), k.to_string());
+                            if arg == "much" {
+                                panic!("much is not allowed as an argument name!");
+                            }
+                            args.insert(arg.to_string(), new_arg_name);
+                            k = k + 1;
+                        }                        
                     }
                     
                     function_count = function_count + 1;

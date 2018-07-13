@@ -17,3 +17,10 @@ FUNC_START_1
 very
 GLOBAL_4
 ARR_START_1
+very
+GLOBAL_5
+FUNC_START_2
+plz
+GLOBAL_5
+plz
+bark

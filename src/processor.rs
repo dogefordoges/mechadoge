@@ -333,7 +333,7 @@ fn function_helper(lines: Vec<String>, line_number: usize) -> (Vec<String>, Hash
             let args: Vec<&str> = split_line[j..split_line.len()].to_vec();
 
             function_body.push(args.len().to_string());
-            for arg in args { function_body.push(arg.to_string()) }
+            for arg in args.iter().rev() { function_body.push(arg.to_string()) }
 
             let mut new_line: String = String::new();
 
@@ -494,7 +494,7 @@ pub fn process_arrays(mut tokens: Vec<String>) -> (Vec<String>, HashMap<String, 
     return (final_tokens, array_heap);
 }
 
-fn stackify(tokens: Vec<String>) -> Vec<String> {
+pub fn stackify(tokens: Vec<String>) -> Vec<String> {
     let mut new_tokens: Vec<String> = Vec::<String>::new();
     let mut stack: Vec<String> = Vec::<String>::new();
 
@@ -518,6 +518,10 @@ fn stackify(tokens: Vec<String>) -> Vec<String> {
             },
             _ => { stack.push(token.to_string()) }
         }
+    }
+
+    for s in stack {
+        new_tokens.push(s);
     }
 
     new_tokens.reverse();

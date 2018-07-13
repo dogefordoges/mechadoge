@@ -17,16 +17,14 @@ fn read_to_lines(filename: &str) -> Vec<String> {
     return lines;
 }
 
-fn interpret(mut tokens: Vec<String>, context: processor::Context) {
-    tokens.reverse();
-    let mut stack: Vec<String> = tokens.clone();
-
+fn interpret(tokens: Vec<String>, context: processor::Context) {
+    let mut stack: Vec<String>  = tokens.clone();
+    stack.reverse();
+    //for s in stack.clone() { println!("{}", s); }
+    let mut stack_pointer: usize = stack.len() - 1;
     let mut global_variables: HashMap<String, String> = HashMap::<String, String>::new();
 
-    let mut stack_pointer = stack.len() - 1;
-
     loop {
-        if stack_pointer == 0 { break }
 
         let token: &str = &stack[stack_pointer].clone();
 
@@ -34,100 +32,91 @@ fn interpret(mut tokens: Vec<String>, context: processor::Context) {
 
         match token {
             "very" => {
-                stack.pop();//pop "very"
-                
-                let variable_name: String = stack.pop().unwrap();
-                stack_pointer = stack_pointer - 1;
-                
                 let variable: String = stack.pop().unwrap();
-                stack_pointer = stack_pointer - 1;
-                
+                let variable_name: String = stack.pop().unwrap();
+                stack.pop();//pop "very"
+
                 global_variables.insert(variable_name, variable);
             },
             "plz" => {
-                stack.pop();//pop "plz"
-                
-                let function_name: String = stack.pop().unwrap();
-                stack_pointer = stack_pointer - 1;
+                let function_name: String = stack[stack_pointer+1].clone();
                 let mut function_pointer: String = function_name.clone();
 
                 if !function_pointer.contains("FUNC_START") {
                     if global_variables.contains_key(&function_pointer) {
-                        function_pointer = global_variables.get(&function_pointer).unwrap().to_string();
+                        function_pointer = global_variables.get(&function_pointer).unwrap().to_string();                        
                     } else {
                         function_pointer = "NONE".to_string();
                     }
-                    
                 }
 
-                if function_pointer != "NONE".to_string() {
-                    let function_body: Vec<String> = context.function_heap.get(&function_pointer).unwrap().to_vec();
+                if function_pointer != "NONE" {
+                    if context.function_heap.contains_key(&function_pointer) {
+                        let function_body: Vec<String> = context.function_heap.get(&function_pointer).unwrap().to_vec();
 
-                    let num_args: usize = function_body[0].parse().unwrap();
+                        let num_args: usize = function_body[0].parse().unwrap();
 
-                    let mut local_scope: HashMap<String, String> = HashMap::<String, String>::new();
-
-                    for i in 0..num_args {
-                        let parameter_name: String = function_body[1+i].clone();
-                        let parameter: String = stack.pop().unwrap();
-                        stack_pointer = stack_pointer - 1;
-                        local_scope.insert(parameter_name, parameter);
-                    }
-
-                    for i in (1+num_args..function_body.len()).rev() {
-                        if local_scope.contains_key(&function_body[i]) {
-                            stack.push(local_scope.get(&function_body[i]).unwrap().to_string());
-                        } else {
-                            stack.push(function_body[i].clone());
+                        let mut local_scope: HashMap<String, String> = HashMap::<String, String>::new();
+                        
+                        for i in 0..num_args {
+                            let parameter_name: String = function_body[1+i].clone();
+                            let parameter_value: String = stack.pop().unwrap();
+                            local_scope.insert(parameter_name, parameter_value);
                         }
+
+                        stack.pop();//pop off function name
+                        stack.pop();//pop off "plz"
+
+                        let function: Vec<String> = function_body[num_args+1..function_body.len()].to_vec();
+
+                        for code in processor::stackify(function).iter().rev() {
+                            if local_scope.contains_key(code) {
+                                stack.push(local_scope.get(code).unwrap().to_string());
+                            } else {
+                                stack.push(code.to_string());
+                            }                            
+                        }
+
+                        stack_pointer = stack.len() - 1;
+                        
+                    } else {                        
+                        panic!("function pointer: {} has no definition", function_pointer);   
                     }
-
-                    //for s in stack.clone().iter().rev() { println!("{}", s); }
-                    //println!(" ");
-
-                    stack_pointer = stack.len() - 1;
                 } else {
-                    let name: &str = &function_name; 
-                    match name {
+                    let func: &str = &function_name;
+                    match func {
                         "bark" => {
-                            let value: String = stack.pop().unwrap();
-                            stack_pointer = stack_pointer - 1;
+                            let mut value: String = stack.pop().unwrap();
+                            stack.pop();//pop off "bark"
+                            stack.pop();//pop off "plz"
+
+                            if value == "bark" {
+                                panic!("no input available for bark");
+                            }
+
+                            if value.contains("GLOBAL") {
+                                value = global_variables.get(&value).unwrap().to_string();
+                            }
 
                             if value.contains("STR") {
-                                if context.string_heap.contains_key(&value) {
-                                    let str_value: String = context.string_heap.get(&value).unwrap().to_string();
-                                    println!("{}", str_value);                                    
-                                } else {
-                                    panic!("string: {} not found", value);
-                                }                              
-                            } else if global_variables.contains_key(&value) {
-                                let global_variable: String = global_variables.get(&value).unwrap().to_string();
+                                value = context.string_heap.get(&value).unwrap().to_string();
+                            }
 
-                                if global_variable.contains("STR") {
-                                    if context.string_heap.contains_key(&global_variable) {
-                                        let str_value: String = context.string_heap.get(&global_variable).unwrap().to_string();
-                                        println!("{}", str_value);                                    
-                                    } else {
-                                        panic!("string: {} not found", global_variable);
-                                    }
-                                }
-                                
-                            } else {
-                                panic!("mechadoge can't bark: {}", value);
-                            }                            
+                            println!("{}", value);
                         },
                         _ => {
                             panic!("function: {} not found", function_name);
                         }
-                    }
+                    }                    
                 }
-                
             },
             _ => {
-                //what to do here? panic?!
-                
-                //println!("{}", token);
+                ()
             }
+        }
+
+        if stack_pointer == 0 {
+            break
         }
         stack_pointer = stack_pointer - 1;
     }

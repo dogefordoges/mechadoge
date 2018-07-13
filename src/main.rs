@@ -23,21 +23,32 @@ fn interpret(mut tokens: Vec<String>, context: processor::Context) {
 
     let mut global_variables: HashMap<String, String> = HashMap::<String, String>::new();
 
-    loop {
-        if stack.len() == 0 { break }
+    let mut stack_pointer = stack.len() - 1;
 
-        let token: &str = &stack.pop().unwrap();
+    loop {
+        if stack_pointer == 0 { break }
+
+        let token: &str = &stack[stack_pointer].clone();
 
         //println!("{}", token);
 
         match token {
             "very" => {
+                stack.pop();//pop "very"
+                
                 let variable_name: String = stack.pop().unwrap();
+                stack_pointer = stack_pointer - 1;
+                
                 let variable: String = stack.pop().unwrap();
+                stack_pointer = stack_pointer - 1;
+                
                 global_variables.insert(variable_name, variable);
             },
             "plz" => {
+                stack.pop();//pop "plz"
+                
                 let function_name: String = stack.pop().unwrap();
+                stack_pointer = stack_pointer - 1;
                 let mut function_pointer: String = function_name.clone();
 
                 if !function_pointer.contains("FUNC_START") {
@@ -59,6 +70,7 @@ fn interpret(mut tokens: Vec<String>, context: processor::Context) {
                     for i in 0..num_args {
                         let parameter_name: String = function_body[1+i].clone();
                         let parameter: String = stack.pop().unwrap();
+                        stack_pointer = stack_pointer - 1;
                         local_scope.insert(parameter_name, parameter);
                     }
 
@@ -68,12 +80,18 @@ fn interpret(mut tokens: Vec<String>, context: processor::Context) {
                         } else {
                             stack.push(function_body[i].clone());
                         }
-                    }                    
+                    }
+
+                    //for s in stack.clone().iter().rev() { println!("{}", s); }
+                    //println!(" ");
+
+                    stack_pointer = stack.len() - 1;
                 } else {
                     let name: &str = &function_name; 
                     match name {
                         "bark" => {
                             let value: String = stack.pop().unwrap();
+                            stack_pointer = stack_pointer - 1;
 
                             if value.contains("STR") {
                                 if context.string_heap.contains_key(&value) {
@@ -81,7 +99,7 @@ fn interpret(mut tokens: Vec<String>, context: processor::Context) {
                                     println!("{}", str_value);                                    
                                 } else {
                                     panic!("string: {} not found", value);
-                                }                                
+                                }                              
                             } else if global_variables.contains_key(&value) {
                                 let global_variable: String = global_variables.get(&value).unwrap().to_string();
 
@@ -96,7 +114,7 @@ fn interpret(mut tokens: Vec<String>, context: processor::Context) {
                                 
                             } else {
                                 panic!("mechadoge can't bark: {}", value);
-                            }
+                            }                            
                         },
                         _ => {
                             panic!("function: {} not found", function_name);
@@ -107,9 +125,11 @@ fn interpret(mut tokens: Vec<String>, context: processor::Context) {
             },
             _ => {
                 //what to do here? panic?!
+                
                 //println!("{}", token);
             }
         }
+        stack_pointer = stack_pointer - 1;
     }
 }
 

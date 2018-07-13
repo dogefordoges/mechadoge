@@ -494,6 +494,37 @@ pub fn process_arrays(mut tokens: Vec<String>) -> (Vec<String>, HashMap<String, 
     return (final_tokens, array_heap);
 }
 
+fn stackify(tokens: Vec<String>) -> Vec<String> {
+    let mut new_tokens: Vec<String> = Vec::<String>::new();
+    let mut stack: Vec<String> = Vec::<String>::new();
+
+    for token in tokens.iter().rev() {
+        let t: &str = &token.clone();
+        match t {
+            "very" => {
+                stack.push(token.to_string());//push "very"
+                loop {
+                    if stack.len() == 0 { break }
+                    new_tokens.push(stack.pop().unwrap());
+                }
+            },
+            "plz" => {
+                stack.push(token.to_string());//push "plz"
+                loop {
+                    if stack.len() == 0 { break }
+                    new_tokens.push(stack.pop().unwrap());
+                }
+                
+            },
+            _ => { stack.push(token.to_string()) }
+        }
+    }
+
+    new_tokens.reverse();
+    
+    return new_tokens;
+}
+
 pub struct Context {
     pub string_heap: HashMap<String, String>,
     pub function_heap: HashMap<String, Vec<String>>,
@@ -524,7 +555,7 @@ pub fn preprocess_code(lines: Vec<String>) -> (Vec<String>, Context) {
         array_heap: array_heap
     };
 
-    return (processed_arrays, context);
+    return (stackify(processed_arrays), context);
 }
 
 #[cfg(test)]

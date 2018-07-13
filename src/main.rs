@@ -20,7 +20,7 @@ fn read_to_lines(filename: &str) -> Vec<String> {
 fn interpret(tokens: Vec<String>, context: processor::Context) {
     let mut stack: Vec<String>  = tokens.clone();
     stack.reverse();
-    //for s in stack.clone() { println!("{}", s); }
+    
     let mut stack_pointer: usize = stack.len() - 1;
     let mut global_variables: HashMap<String, String> = HashMap::<String, String>::new();
 
@@ -125,6 +125,6 @@ fn interpret(tokens: Vec<String>, context: processor::Context) {
 fn main() {
     let input_lines: Vec<String> = read_to_lines("data/preprocessor_test_input.mdg");
     let (processed_code, context): (Vec<String>, processor::Context) = processor::preprocess_code(input_lines);
-    //for t in processed_code.clone() { println!("{}", t); }
+    
     interpret(processed_code, context);
 }

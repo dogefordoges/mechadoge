@@ -537,10 +537,10 @@ pub struct Context {
 
 pub fn preprocess_code(lines: Vec<String>) -> (Vec<String>, Context) {
     let processed_comments: Vec<String> = process_comments(lines);
-    let processed_local_scope: Vec<String> = process_local_scope(processed_comments);
+    let (processed_strings, string_heap) = process_strings(processed_comments);
+    let processed_local_scope: Vec<String> = process_local_scope(processed_strings);
     let processed_global_scope: Vec<String> = process_global_scope(processed_local_scope);
-    let (processed_strings, string_heap) = process_strings(processed_global_scope);
-    let (processed_functions, function_heap) = process_functions(processed_strings);
+    let (processed_functions, function_heap) = process_functions(processed_global_scope);
 
     let mut tokens: Vec<String> = Vec::<String>::new();
 

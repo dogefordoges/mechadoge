@@ -277,13 +277,55 @@ pub fn process_strings(mut lines: Vec<String>) -> (Vec<String>, HashMap<String, 
     return (lines, string_heap);
 }
 
-fn function_helper(lines: Vec<String>, line_number: usize) -> (Vec<String>, HashMap<String, Vec<String>>) {
+pub fn stackify(tokens: Vec<String>) -> Vec<String> {
+    let mut new_tokens: Vec<String> = Vec::<String>::new();
+    let mut stack: Vec<String> = Vec::<String>::new();
+
+    for token in tokens.iter().rev() {
+        let t: &str = &token.clone();
+        match t {
+            "very" => {
+                stack.push(token.to_string());//push "very"
+                loop {
+                    if stack.len() == 0 { break }
+                    new_tokens.push(stack.pop().unwrap());
+                }
+            },
+            "plz" => {
+                stack.push(token.to_string());//push "plz"
+                loop {
+                    if stack.len() == 0 { break }
+                    new_tokens.push(stack.pop().unwrap());
+                }
+                
+            },
+            _ => { stack.push(token.to_string()) }
+        }
+    }
+
+    for s in stack {
+        new_tokens.push(s);
+    }
+
+    new_tokens.reverse();
+    
+    return new_tokens;
+}
+
+#[derive(Clone)]
+pub struct Function {
+    pub num_args: usize,
+    pub parameter_names: Vec<String>,
+    pub body: Vec<String>
+}
+
+fn function_helper(lines: Vec<String>, line_number: usize) -> (Vec<String>, HashMap<String, Function>) {
     let mut i = line_number;
 
-    let mut function_heap: HashMap<String, Vec<String>> = HashMap::new();
+    let mut function_heap: HashMap<String, Function> = HashMap::<String, Function>::new();
     let mut new_lines: Vec<String> = Vec::<String>::new();
 
-    let mut function_body: Vec<String> = Vec::<String>::new();
+    let mut function_body: Function = Function { num_args: 0, parameter_names: Vec::<String>::new(), body: Vec::<String>::new() };
     let mut func_pointer: &str = "";
     let mut start_number: &str = "";
 
@@ -295,7 +337,7 @@ fn function_helper(lines: Vec<String>, line_number: usize) -> (Vec<String>, Hash
 
         if lines[i].contains("FUNC_START") && func_pointer != "" {
             let (newest_lines, newest_heap) = function_helper(lines.clone(), i);
-            function_body.push(newest_lines[0].clone());
+            function_body.body.push(newest_lines[0].clone());
 
             let len: usize = newest_lines.len();
 
@@ -332,8 +374,9 @@ fn function_helper(lines: Vec<String>, line_number: usize) -> (Vec<String>, Hash
 
             let args: Vec<&str> = split_line[j..split_line.len()].to_vec();
 
-            function_body.push(args.len().to_string());
-            for arg in args.iter().rev() { function_body.push(arg.to_string()) }
+            function_body.num_args = args.len();
+
+            for arg in args.iter().rev() { function_body.parameter_names.push(arg.to_string()) }
 
             let mut new_line: String = String::new();
 
@@ -362,7 +405,7 @@ fn function_helper(lines: Vec<String>, line_number: usize) -> (Vec<String>, Hash
         } else {
             let tokens: Vec<&str> = lines[i].split(" ").filter(|t| t != &"" && t != &" ").collect();
 
-            for t in tokens { function_body.push(t.to_string()) }
+            for t in tokens { function_body.body.push(t.to_string()) }
 
             new_lines.push("".to_string());
             i = i + 1;
@@ -372,9 +415,9 @@ fn function_helper(lines: Vec<String>, line_number: usize) -> (Vec<String>, Hash
     return (new_lines, function_heap);
 }
 
-pub fn process_functions(mut lines: Vec<String>) -> (Vec<String>, HashMap<String, Vec<String>>) {
+pub fn process_functions(mut lines: Vec<String>) -> (Vec<String>, HashMap<String, Function>) {
     let mut i = 0;
-    let mut function_heap: HashMap<String, Vec<String>> = HashMap::new();
+    let mut function_heap: HashMap<String, Function> = HashMap::new();
 
     loop {
         if i == lines.len() {
@@ -494,44 +537,9 @@ pub fn process_arrays(mut tokens: Vec<String>) -> (Vec<String>, HashMap<String, 
     return (final_tokens, array_heap);
 }
 
-pub fn stackify(tokens: Vec<String>) -> Vec<String> {
-    let mut new_tokens: Vec<String> = Vec::<String>::new();
-    let mut stack: Vec<String> = Vec::<String>::new();
-
-    for token in tokens.iter().rev() {
-        let t: &str = &token.clone();
-        match t {
-            "very" => {
-                stack.push(token.to_string());//push "very"
-                loop {
-                    if stack.len() == 0 { break }
-                    new_tokens.push(stack.pop().unwrap());
-                }
-            },
-            "plz" => {
-                stack.push(token.to_string());//push "plz"
-                loop {
-                    if stack.len() == 0 { break }
-                    new_tokens.push(stack.pop().unwrap());
-                }
-                
-            },
-            _ => { stack.push(token.to_string()) }
-        }
-    }
-
-    for s in stack {
-        new_tokens.push(s);
-    }
-
-    new_tokens.reverse();
-    
-    return new_tokens;
-}
-
 pub struct Context {
     pub string_heap: HashMap<String, String>,
-    pub function_heap: HashMap<String, Vec<String>>,
+    pub function_heap: HashMap<String, Function>,
     pub array_heap: HashMap<String, Vec<String>>,
 }
 
@@ -650,16 +658,18 @@ mod processor_tests {
         let input_lines = read_to_lines("data/function_test_input.mdg");
         let output_lines = read_to_lines("data/function_test_output.mdg");
         
-        let (output, output_heap): (Vec<String>, HashMap<String, Vec<String>>) = process_functions(input_lines);
+        let (output, output_heap): (Vec<String>, HashMap<String, Function>) = process_functions(input_lines);
 
         let function_body_lines = read_to_lines("data/function_body_test.txt");
 
-        let func_body: Vec<String> = output_heap.get("FUNC_START_0").unwrap().to_vec();
+        let func: &Function = output_heap.get("FUNC_START_0").unwrap();
+        assert_eq!(func.num_args, 1);
+        assert_eq!(func.parameter_names[0], "0_0");
 
-        assert_eq!(func_body.len(), function_body_lines.len());
+        assert_eq!(func.body.len(), function_body_lines.len());
 
-        for i in 0..func_body.len() {
-            assert_eq!(func_body[i], function_body_lines[i]);
+        for i in 0..func.body.len() {
+            assert_eq!(func.body[i], function_body_lines[i]);
         }
 
         assert_eq!(output.len(), output_lines.len());

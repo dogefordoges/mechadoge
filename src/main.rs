@@ -52,24 +52,19 @@ fn interpret(tokens: Vec<String>, context: processor::Context) {
 
                 if function_pointer != "NONE" {
                     if context.function_heap.contains_key(&function_pointer) {
-                        let function_body: Vec<String> = context.function_heap.get(&function_pointer).unwrap().to_vec();
-
-                        let num_args: usize = function_body[0].parse().unwrap();
+                        let function: &processor::Function = context.function_heap.get(&function_pointer).unwrap();
 
                         let mut local_scope: HashMap<String, String> = HashMap::<String, String>::new();
                         
-                        for i in 0..num_args {
-                            let parameter_name: String = function_body[1+i].clone();
+                        for i in 0..function.num_args {
                             let parameter_value: String = stack.pop().unwrap();
-                            local_scope.insert(parameter_name, parameter_value);
+                            local_scope.insert(function.parameter_names[i].clone(), parameter_value);
                         }
 
                         stack.pop();//pop off function name
                         stack.pop();//pop off "plz"
 
-                        let function: Vec<String> = function_body[num_args+1..function_body.len()].to_vec();
-
-                        for code in processor::stackify(function).iter().rev() {
+                        for code in processor::stackify(function.body.clone()).iter().rev() {
                             if local_scope.contains_key(code) {
                                 stack.push(local_scope.get(code).unwrap().to_string());
                             } else {

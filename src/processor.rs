@@ -1,4 +1,35 @@
 use std::collections::HashMap;
+use std::fmt;
+
+#[derive(Clone, Debug)]
+pub struct Function {
+    pub num_args: usize,
+    pub parameter_names: Vec<String>,
+    pub body: Vec<String>
+}
+
+#[derive(Debug)]
+pub enum Snack {
+    INT(i64),
+    UINT(u64),
+    FLOAT(f64),
+    FUNCTION(Function),
+    ARRAY(Vec<Snack>),
+    STRING(String)
+}
+
+impl fmt::Display for Snack {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match &self {
+            Snack::STRING(s) => {
+                write!(f, "{}", s)
+            },
+            _ => {
+                panic!("Unable to display {:?}", self);
+            }
+        }
+    }
+}
 
 pub fn process_comments(lines: Vec<String>) -> Vec<String> {
 
@@ -208,12 +239,12 @@ pub fn process_global_scope(mut lines: Vec<String>) -> Vec<String> {
     return lines;
 }
 
-pub fn process_strings(mut lines: Vec<String>) -> (Vec<String>, HashMap<String, String>) {
+pub fn process_strings(mut lines: Vec<String>) -> (Vec<String>, HashMap<String, Snack>) {
     let mut i = 0;
 
     let mut string_count = 0;
 
-    let mut string_heap: HashMap<String, String> = HashMap::<String, String>::new();
+    let mut string_heap: HashMap<String, Snack> = HashMap::<String, Snack>::new();
 
     loop {
 
@@ -265,7 +296,7 @@ pub fn process_strings(mut lines: Vec<String>) -> (Vec<String>, HashMap<String, 
 
             new_str.retain(|c| c != '"');
 
-            string_heap.insert(string_pointer, new_str);
+            string_heap.insert(string_pointer, Snack::STRING(new_str));
 
             string_count = string_count + 1;
         } else {
@@ -310,13 +341,6 @@ pub fn stackify(tokens: Vec<String>) -> Vec<String> {
     new_tokens.reverse();
     
     return new_tokens;
-}
-
-#[derive(Clone)]
-pub struct Function {
-    pub num_args: usize,
-    pub parameter_names: Vec<String>,
-    pub body: Vec<String>
 }
 
 fn function_helper(lines: Vec<String>, line_number: usize) -> (Vec<String>, HashMap<String, Function>) {
@@ -538,7 +562,7 @@ pub fn process_arrays(mut tokens: Vec<String>) -> (Vec<String>, HashMap<String, 
 }
 
 pub struct Context {
-    pub string_heap: HashMap<String, String>,
+    pub string_heap: HashMap<String, Snack>,
     pub function_heap: HashMap<String, Function>,
     pub array_heap: HashMap<String, Vec<String>>,
 }
@@ -645,8 +669,8 @@ mod processor_tests {
         let output_lines = read_to_lines("data/string_test_output.mdg");
         let (output, string_heap) = process_strings(input_lines);
 
-        assert_eq!("all your base belong to us", string_heap.get("STR_0").unwrap());
-        assert_eq!("- mechadoge", string_heap.get("STR_1").unwrap());
+        assert_eq!("all your base belong to us", string_heap.get("STR_0").unwrap().to_string());
+        assert_eq!("- mechadoge", string_heap.get("STR_1").unwrap().to_string());
 
         for i in 0..output.len() {
             assert_eq!(output[i], output_lines[i]);

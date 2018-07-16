@@ -8,7 +8,7 @@ pub struct Function {
     pub body: Vec<String>
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Snack {
     INT(i64),
     UINT(u64),
@@ -472,10 +472,10 @@ pub fn process_functions(mut lines: Vec<String>) -> (Vec<String>, HashMap<String
     return (final_lines, function_heap);
 }
 
-fn array_helper(tokens: Vec<String>, token_number: usize, mut array_count: usize) -> (Vec<String>, HashMap<String, Vec<String>>, usize) {
+fn array_helper(tokens: Vec<String>, token_number: usize, mut array_count: usize) -> (Vec<String>, HashMap<String, Vec<Snack>>, usize) {
     let mut new_tokens: Vec<String> = Vec::<String>::new();
-    let mut new_heap: HashMap<String, Vec<String>> = HashMap::new();
-    let mut array_body: Vec<String> = Vec::<String>::new();
+    let mut new_heap: HashMap<String, Vec<Snack>> = HashMap::new();
+    let mut array_body: Vec<Snack> = Vec::<Snack>::new();
 
     let mut i = token_number;
     let mut array_pointer: String = "".to_string();
@@ -489,7 +489,7 @@ fn array_helper(tokens: Vec<String>, token_number: usize, mut array_count: usize
         if tokens[i] == "long" && array_pointer != "" {
             let (newest_tokens, newest_heap, new_array_count) = array_helper(tokens.clone(), i, array_count);
 
-            array_body.push(newest_tokens[0].clone());
+            array_body.push(Snack::STRING(newest_tokens[0].clone()));
 
             new_heap.extend(newest_heap.clone());
 
@@ -517,7 +517,7 @@ fn array_helper(tokens: Vec<String>, token_number: usize, mut array_count: usize
             new_tokens.push("".to_string());                
             break
         } else {
-            array_body.push(tokens[i].clone());
+            array_body.push(Snack::STRING(tokens[i].clone()));
             new_tokens.push("".to_string());
             i = i + 1;
         }            
@@ -526,9 +526,9 @@ fn array_helper(tokens: Vec<String>, token_number: usize, mut array_count: usize
     return (new_tokens, new_heap, array_count);
 }
 
-pub fn process_arrays(mut tokens: Vec<String>) -> (Vec<String>, HashMap<String, Vec<String>>) {
+pub fn process_arrays(mut tokens: Vec<String>) -> (Vec<String>, HashMap<String, Vec<Snack>>) {
     let mut i: usize = 0;
-    let mut array_heap: HashMap<String, Vec<String>> = HashMap::new();
+    let mut array_heap: HashMap<String, Vec<Snack>> = HashMap::new();
     let mut array_count: usize = 0;
 
     loop {
@@ -561,10 +561,27 @@ pub fn process_arrays(mut tokens: Vec<String>) -> (Vec<String>, HashMap<String, 
     return (final_tokens, array_heap);
 }
 
+pub fn snackify(token: String) -> Snack {
+
+    if token.parse::<u64>().is_ok() {
+        return Snack::UINT(token.parse().unwrap());
+    }
+
+    if token.parse::<i64>().is_ok() {
+        return Snack::INT(token.parse().unwrap());
+    }
+
+    if token.parse::<f64>().is_ok() {
+        return Snack::FLOAT(token.parse().unwrap());
+    }
+
+    return Snack::STRING(token);
+}
+
 pub struct Context {
     pub string_heap: HashMap<String, Snack>,
     pub function_heap: HashMap<String, Function>,
-    pub array_heap: HashMap<String, Vec<String>>,
+    pub array_heap: HashMap<String, Vec<Snack>>,
 }
 
 pub fn preprocess_code(lines: Vec<String>) -> (Vec<String>, Context) {
@@ -707,15 +724,15 @@ mod processor_tests {
     fn test_array_processor() {
         let input_tokens = read_to_tokens("data/array_test_input.mdg");
         let output_tokens = read_to_tokens("data/array_test_output.mdg");
-        let (output, output_heap): (Vec<String>, HashMap<String, Vec<String>>) = process_arrays(input_tokens);
+        let (output, output_heap): (Vec<String>, HashMap<String, Vec<Snack>>) = process_arrays(input_tokens);
 
         let array_body_lines = read_to_lines("data/array_body_test.txt");
-        let array_body: Vec<String> = output_heap.get("ARR_START_0").unwrap().to_vec();
+        let array_body: Vec<Snack> = output_heap.get("ARR_START_0").unwrap().to_vec();
 
         assert_eq!(array_body.len(), array_body_lines.len());
 
         for i in 0..array_body.len() {
-            assert_eq!(array_body[i], array_body_lines[i]);
+            assert_eq!(array_body[i].to_string(), array_body_lines[i]);
         }
 
         assert_eq!(output.len(), output_tokens.len());
@@ -747,5 +764,29 @@ mod processor_tests {
         for i in 0..output.len() {
             assert_eq!(output[i], output_tokens[i]);
         }
+    }
+
+    #[test]
+    fn test_snackify() {
+        match snackify("1".to_string()) {
+            Snack::UINT(u) => { () },
+            _ => { panic!("not an unsigned int!"); }
+        }
+
+        match snackify("-1".to_string()) {
+            Snack::INT(i) => { () },
+            _ => { panic!("not an unsigned int!"); }
+        }
+
+        match snackify("1.5".to_string()) {
+            Snack::FLOAT(f) => { () },
+            _ => { panic!("not an unsigned int!"); }
+        }
+
+        match snackify("foo.-4".to_string()) {
+            Snack::STRING(s) => { () },
+            _ => { panic!("not an unsigned int!"); }
+        }
+                
     }
 }

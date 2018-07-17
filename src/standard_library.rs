@@ -9,8 +9,7 @@ pub fn bark(value: String, global_variables: &HashMap<String, Snack>, string_hea
         print_value = global_variables.get(&print_value).unwrap().to_string();
     }
 
-    if print_value.contains("STR") {
-        println!("{}", print_value);
+    if print_value.contains("STR") {        
         print_value = string_heap.get(&print_value).unwrap().to_string();
     }
 

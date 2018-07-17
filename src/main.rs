@@ -27,10 +27,49 @@ fn bark(value: String, global_variables: &HashMap<String, Snack>, string_heap: &
     }
 
     if print_value.contains("STR") {
+        println!("{}", print_value);
         print_value = string_heap.get(&print_value).unwrap().to_string();
     }
 
     println!("{}", print_value);
+}
+
+fn add(v1: &Snack, v2: &Snack) -> Snack {
+    match v1 {
+        Snack::INT(i1) => {
+            match v2 {
+                Snack::INT(i2) => {
+                    Snack::INT(i1 + i2)
+                },
+                _ => {
+                    panic!("Numeric values given to add must be of same type, found: {:?} {:?}", v1, v2);
+                }
+            }
+        },
+        Snack::UINT(u1) => {
+            match v2 {
+                Snack::UINT(u2) => {
+                    Snack::UINT(u1 + u2)
+                },
+                _ => {
+                    panic!("Numeric values given to add must be of same type, found: {:?} {:?}", v1, v2);
+                }
+            }
+        },
+        Snack::FLOAT(f1) => {
+            match v2 {
+                Snack::FLOAT(f2) => {
+                    Snack::FLOAT(f1 + f2)
+                },
+                _ => {
+                    panic!("Numeric values given to add must be of same type, found: {:?} {:?}", v1, v2);
+                }
+            }
+        },
+        _ => {
+            panic!("Only numeric values allowed as input to add");
+        }
+    }
 }
 
 fn interpret(tokens: Vec<Snack>, context: processor::Context) {
@@ -127,16 +166,24 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
                                     match func {
                                         "bark" => {
                                             let value: Snack = stack.pop().unwrap();
-                                            stack.pop();
-                                            stack.pop();
+                                            stack.pop();//pop off bark
+                                            stack.pop();//pop off plz
 
                                             bark(value.to_string(), &global_variables, &context.string_heap);
                                         },
+                                        "add" => {
+                                            let v1: Snack = stack.pop().unwrap();
+                                            let v2: Snack = stack.pop().unwrap();
+                                            stack.pop();//pop off add
+                                            stack.pop();//pop off plz
+
+                                            stack.push(add(&v1, &v2));
+                                        },
                                         _ => {
                                             panic!("function_pointer: {} has no definition", s);
-                                        }
+                                        }                                        
                                     }                                    
-                                }                                
+                                }
                             },
                             _ => {
                                 panic!("Expecting {} to be string", function_name);
@@ -165,7 +212,7 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
 }
 
 fn main() {
-    let input_lines: Vec<String> = read_to_lines("data/preprocessor_test_input.mdg");
+    let input_lines: Vec<String> = read_to_lines("data/fun_program.mdg");
     let (processed_code, context): (Vec<Snack>, processor::Context) = processor::preprocess_code(input_lines);
     
     interpret(processed_code, context);

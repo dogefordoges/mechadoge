@@ -1,8 +1,11 @@
 use std::fs::File;
 use std::io::prelude::*;
 use std::collections::HashMap;
+
 mod processor;
 use processor::Snack;
+
+mod standard_library;
 
 fn read_to_lines(filename: &str) -> Vec<String> {
     let mut f = File::open(filename).expect("file not found");
@@ -16,174 +19,6 @@ fn read_to_lines(filename: &str) -> Vec<String> {
     contents.lines().for_each( |line| lines.push(line.to_string()));
 
     return lines;
-}
-
-fn bark(value: String, global_variables: &HashMap<String, Snack>, string_heap: &HashMap<String, Snack>) {
-
-    let mut print_value: String = value.clone();
-
-    if print_value.contains("GLOBAL") {
-        print_value = global_variables.get(&print_value).unwrap().to_string();
-    }
-
-    if print_value.contains("STR") {
-        println!("{}", print_value);
-        print_value = string_heap.get(&print_value).unwrap().to_string();
-    }
-
-    println!("{}", print_value);
-}
-
-fn add(v1: &Snack, v2: &Snack) -> Snack {
-    match v1 {
-        Snack::INT(i1) => {
-            match v2 {
-                Snack::INT(i2) => {
-                    Snack::INT(i1 + i2)
-                },
-                _ => {
-                    panic!("Numeric values given to add must be of same type, found: {:?} {:?}", v1, v2);
-                }
-            }
-        },
-        Snack::UINT(u1) => {
-            match v2 {
-                Snack::UINT(u2) => {
-                    Snack::UINT(u1 + u2)
-                },
-                _ => {
-                    panic!("Numeric values given to add must be of same type, found: {:?} {:?}", v1, v2);
-                }
-            }
-        },
-        Snack::FLOAT(f1) => {
-            match v2 {
-                Snack::FLOAT(f2) => {
-                    Snack::FLOAT(f1 + f2)
-                },
-                _ => {
-                    panic!("Numeric values given to add must be of same type, found: {:?} {:?}", v1, v2);
-                }
-            }
-        },
-        _ => {
-            panic!("Only numeric values allowed as input to add. Found: {:?} {:?}", v1, v2);
-        }
-    }
-}
-
-fn sub(v1: &Snack, v2: &Snack) -> Snack {
-    match v1 {
-        Snack::INT(i1) => {
-            match v2 {
-                Snack::INT(i2) => {
-                    Snack::INT(i1 - i2)
-                },
-                _ => {
-                    panic!("Numeric values given to sub must be of same type, found: {:?} {:?}", v1, v2);
-                }
-            }
-        },
-        Snack::UINT(u1) => {
-            match v2 {
-                Snack::UINT(u2) => {
-                    Snack::UINT(u1 - u2)
-                },
-                _ => {
-                    panic!("Numeric values given to sub must be of same type, found: {:?} {:?}", v1, v2);
-                }
-            }
-        },
-        Snack::FLOAT(f1) => {
-            match v2 {
-                Snack::FLOAT(f2) => {
-                    Snack::FLOAT(f1 - f2)
-                },
-                _ => {
-                    panic!("Numeric values given to sub must be of same type, found: {:?} {:?}", v1, v2);
-                }
-            }
-        },
-        _ => {
-            panic!("Only numeric values allowed as input to sub, found: {:?} {:?}", v1, v2);
-        }
-    }
-}
-
-fn mul(v1: &Snack, v2: &Snack) -> Snack {
-    match v1 {
-        Snack::INT(i1) => {
-            match v2 {
-                Snack::INT(i2) => {
-                    Snack::INT(i1 * i2)
-                },
-                _ => {
-                    panic!("Numeric values given to mul must be of same type, found: {:?} {:?}", v1, v2);
-                }
-            }
-        },
-        Snack::UINT(u1) => {
-            match v2 {
-                Snack::UINT(u2) => {
-                    Snack::UINT(u1 * u2)
-                },
-                _ => {
-                    panic!("Numeric values given to mul must be of same type, found: {:?} {:?}", v1, v2);
-                }
-            }
-        },
-        Snack::FLOAT(f1) => {
-            match v2 {
-                Snack::FLOAT(f2) => {
-                    Snack::FLOAT(f1 * f2)
-                },
-                _ => {
-                    panic!("Numeric values given to mul must be of same type, found: {:?} {:?}", v1, v2);
-                }
-            }
-        },
-        _ => {
-            panic!("Only numeric values allowed as input to mul, found: {:?} {:?}", v1, v2);
-        }
-    }
-}
-
-fn div(v1: &Snack, v2: &Snack) -> Snack {
-    match v1 {
-        Snack::INT(i1) => {
-            match v2 {
-                Snack::INT(i2) => {
-                    Snack::INT(i1 / i2)
-                },
-                _ => {
-                    panic!("Numeric values given to div must be of same type, found: {:?} {:?}", v1, v2);
-                }
-            }
-        },
-        Snack::UINT(u1) => {
-            match v2 {
-                Snack::UINT(u2) => {
-                    Snack::UINT(u1 / u2)
-                },
-                _ => {
-                    panic!("Numeric values given to div must be of same type, found: {:?} {:?}", v1, v2);
-                }
-            }
-        },
-        Snack::FLOAT(f1) => {
-            match v2 {
-                Snack::FLOAT(f2) => {
-                    Snack::FLOAT(f1 / f2)
-                },
-                _ => {
-                    panic!("Numeric values given to div must be of same type, found: {:?} {:?}", v1, v2);
-                }
-            }
-        },
-        _ => {
-            panic!("Only numeric values allowed as input to div, found: {:?} {:?}", v1, v2);
-        }
-    }
 }
 
 fn interpret(tokens: Vec<Snack>, context: processor::Context) {
@@ -206,11 +41,8 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
                 match t {
                     "very" => {
                         let variable: Snack = stack.pop().unwrap();
-                        //println!("{:?}", variable);
 
-                        let variable_name: Snack = stack.pop().unwrap();
-                        
-                        //println!("{:?}", variable_name);
+                        let variable_name: Snack = stack.pop().unwrap();                       
 
                         match variable_name {
                             Snack::STRING(s) => {
@@ -283,7 +115,7 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
                                             stack.pop();//pop off bark
                                             stack.pop();//pop off plz
 
-                                            bark(value.to_string(), &global_variables, &context.string_heap);
+                                            standard_library::bark(value.to_string(), &global_variables, &context.string_heap);
                                         },
                                         "add" => {
                                             let v2: Snack = stack.pop().unwrap();
@@ -291,7 +123,7 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
                                             stack.pop();//pop off add
                                             stack.pop();//pop off plz
 
-                                            stack.push(add(&v1, &v2));
+                                            stack.push(standard_library::add(&v1, &v2));
                                         },
                                         "sub" => {
                                             let v2: Snack = stack.pop().unwrap();
@@ -299,7 +131,7 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
                                             stack.pop();//pop off sub
                                             stack.pop();//pop off plz
 
-                                            stack.push(sub(&v1, &v2));
+                                            stack.push(standard_library::sub(&v1, &v2));
                                         },
                                         "mul" => {
                                             let v2: Snack = stack.pop().unwrap();
@@ -307,7 +139,7 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
                                             stack.pop();//pop off mul
                                             stack.pop();//pop off plz
 
-                                            stack.push(mul(&v1, &v2));
+                                            stack.push(standard_library::mul(&v1, &v2));
                                         },
                                         "div" => {
                                             let v2: Snack = stack.pop().unwrap();
@@ -315,7 +147,7 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
                                             stack.pop();//pop off div
                                             stack.pop();//pop off plz
 
-                                            stack.push(div(&v1, &v2));
+                                            stack.push(standard_library::div(&v1, &v2));
                                         },
                                         "float" => {
                                             let v: Snack = stack.pop().unwrap();
@@ -359,19 +191,27 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
                                                 }
                                             }                                            
                                         },
-                                        "dose" => {
+                                        "umm" => {
                                             let v: Snack = stack.pop().unwrap();
                                             stack.pop();//pop off uint
                                             stack.pop();//pop off plz
 
                                             match v {
-                                                Snack::BOOLEAN(b) => { assert!(b); },
-                                                _ => { panic!("Expecting boolean, found {:?}", v); }
+                                                Snack::BOOLEAN(b) => { assert!(b, "{} is not 1=1", v); },
+                                                _ => { panic!("Expecting boolean, found {}", v.to_string()); }
                                             }
+                                        },
+                                        "is" => {
+                                            let v2: Snack = stack.pop().unwrap();
+                                            let v1: Snack = stack.pop().unwrap();
+                                            stack.pop();//pop off is
+                                            stack.pop();//pop off plz
+
+                                            stack.push(standard_library::equal(&v1, &v2));
                                         },
                                         _ => {
                                             panic!("function_pointer: {} has no definition", s);
-                                        }                                        
+                                        }              
                                     }                                    
                                 }
                             },

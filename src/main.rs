@@ -72,6 +72,120 @@ fn add(v1: &Snack, v2: &Snack) -> Snack {
     }
 }
 
+fn sub(v1: &Snack, v2: &Snack) -> Snack {
+    match v1 {
+        Snack::INT(i1) => {
+            match v2 {
+                Snack::INT(i2) => {
+                    Snack::INT(i1 - i2)
+                },
+                _ => {
+                    panic!("Numeric values given to add must be of same type, found: {:?} {:?}", v1, v2);
+                }
+            }
+        },
+        Snack::UINT(u1) => {
+            match v2 {
+                Snack::UINT(u2) => {
+                    Snack::UINT(u1 - u2)
+                },
+                _ => {
+                    panic!("Numeric values given to add must be of same type, found: {:?} {:?}", v1, v2);
+                }
+            }
+        },
+        Snack::FLOAT(f1) => {
+            match v2 {
+                Snack::FLOAT(f2) => {
+                    Snack::FLOAT(f1 - f2)
+                },
+                _ => {
+                    panic!("Numeric values given to add must be of same type, found: {:?} {:?}", v1, v2);
+                }
+            }
+        },
+        _ => {
+            panic!("Only numeric values allowed as input to add");
+        }
+    }
+}
+
+fn mul(v1: &Snack, v2: &Snack) -> Snack {
+    match v1 {
+        Snack::INT(i1) => {
+            match v2 {
+                Snack::INT(i2) => {
+                    Snack::INT(i1 * i2)
+                },
+                _ => {
+                    panic!("Numeric values given to add must be of same type, found: {:?} {:?}", v1, v2);
+                }
+            }
+        },
+        Snack::UINT(u1) => {
+            match v2 {
+                Snack::UINT(u2) => {
+                    Snack::UINT(u1 * u2)
+                },
+                _ => {
+                    panic!("Numeric values given to add must be of same type, found: {:?} {:?}", v1, v2);
+                }
+            }
+        },
+        Snack::FLOAT(f1) => {
+            match v2 {
+                Snack::FLOAT(f2) => {
+                    Snack::FLOAT(f1 * f2)
+                },
+                _ => {
+                    panic!("Numeric values given to add must be of same type, found: {:?} {:?}", v1, v2);
+                }
+            }
+        },
+        _ => {
+            panic!("Only numeric values allowed as input to add");
+        }
+    }
+}
+
+fn div(v1: &Snack, v2: &Snack) -> Snack {
+    match v1 {
+        Snack::INT(i1) => {
+            match v2 {
+                Snack::INT(i2) => {
+                    Snack::INT(i1 / i2)
+                },
+                _ => {
+                    panic!("Numeric values given to add must be of same type, found: {:?} {:?}", v1, v2);
+                }
+            }
+        },
+        Snack::UINT(u1) => {
+            match v2 {
+                Snack::UINT(u2) => {
+                    Snack::UINT(u1 / u2)
+                },
+                _ => {
+                    panic!("Numeric values given to add must be of same type, found: {:?} {:?}", v1, v2);
+                }
+            }
+        },
+        Snack::FLOAT(f1) => {
+            match v2 {
+                Snack::FLOAT(f2) => {
+                    Snack::FLOAT(f1 / f2)
+                },
+                _ => {
+                    panic!("Numeric values given to add must be of same type, found: {:?} {:?}", v1, v2);
+                }
+            }
+        },
+        _ => {
+            panic!("Only numeric values allowed as input to add");
+        }
+    }
+}
+
 fn interpret(tokens: Vec<Snack>, context: processor::Context) {
     let mut stack: Vec<Snack>  = tokens.clone();
     stack.reverse();
@@ -172,13 +286,37 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
                                             bark(value.to_string(), &global_variables, &context.string_heap);
                                         },
                                         "add" => {
-                                            let v1: Snack = stack.pop().unwrap();
                                             let v2: Snack = stack.pop().unwrap();
+                                            let v1: Snack = stack.pop().unwrap();
                                             stack.pop();//pop off add
                                             stack.pop();//pop off plz
 
                                             stack.push(add(&v1, &v2));
                                         },
+                                        "sub" => {
+                                            let v2: Snack = stack.pop().unwrap();
+                                            let v1: Snack = stack.pop().unwrap();
+                                            stack.pop();//pop off sub
+                                            stack.pop();//pop off plz
+
+                                            stack.push(sub(&v1, &v2));
+                                        },
+                                        "mul" => {
+                                            let v2: Snack = stack.pop().unwrap();
+                                            let v1: Snack = stack.pop().unwrap();
+                                            stack.pop();//pop off mul
+                                            stack.pop();//pop off plz
+
+                                            stack.push(mul(&v1, &v2));
+                                        },
+                                        "div" => {
+                                            let v2: Snack = stack.pop().unwrap();
+                                            let v1: Snack = stack.pop().unwrap();
+                                            stack.pop();//pop off div
+                                            stack.pop();//pop off plz
+
+                                            stack.push(div(&v1, &v2));
+                                        },                                        
                                         _ => {
                                             panic!("function_pointer: {} has no definition", s);
                                         }                                        

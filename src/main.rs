@@ -209,9 +209,82 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
 
                                             stack.push(standard_library::equal(&v1, &v2));
                                         },
+                                        "isnot" => {
+                                            let v2: Snack = stack.pop().unwrap();
+                                            let v1: Snack = stack.pop().unwrap();
+                                            stack.pop();//pop off isnot
+                                            stack.pop();//pop off plz
+
+                                            stack.push(standard_library::isnot(&v1, &v2));
+                                        },
+                                        "not" => {
+                                            let v: Snack = stack.pop().unwrap();
+                                            stack.pop();//pop off is
+                                            stack.pop();//pop off plz
+
+                                            stack.push(standard_library::not(&v));
+                                        },
+                                        "bigger" => {
+                                            let v2: Snack = stack.pop().unwrap();
+                                            let v1: Snack = stack.pop().unwrap();
+                                            stack.pop();//pop off bigger
+                                            stack.pop();//pop off plz
+
+                                            stack.push(standard_library::bigger(&v1, &v2));
+                                        },
+                                        "smaller" => {
+                                            let v2: Snack = stack.pop().unwrap();
+                                            let v1: Snack = stack.pop().unwrap();
+                                            stack.pop();//pop off smaller
+                                            stack.pop();//pop off plz
+
+                                            stack.push(standard_library::smaller(&v1, &v2));
+                                        },
+                                        "biggerish" => {
+                                            let v2: Snack = stack.pop().unwrap();
+                                            let v1: Snack = stack.pop().unwrap();
+                                            stack.pop();//pop off biggerish
+                                            stack.pop();//pop off plz
+
+                                            stack.push(standard_library::biggerish(&v1, &v2));
+                                        },                                        
+                                        "smallerish" => {
+                                            let v2: Snack = stack.pop().unwrap();
+                                            let v1: Snack = stack.pop().unwrap();
+                                            stack.pop();//pop off smallerish
+                                            stack.pop();//pop off plz
+
+                                            stack.push(standard_library::smallerish(&v1, &v2));
+                                        },
+                                        "and" => {
+                                            let v2: Snack = stack.pop().unwrap();
+                                            let v1: Snack = stack.pop().unwrap();
+                                            stack.pop();//pop off and
+                                            stack.pop();//pop off plz
+
+                                            stack.push(standard_library::and(&v1, &v2));
+                                        },                                        
+                                        "or" => {
+                                            let v2: Snack = stack.pop().unwrap();
+                                            let v1: Snack = stack.pop().unwrap();
+                                            stack.pop();//pop off or
+                                            stack.pop();//pop off plz
+
+                                            stack.push(standard_library::or(&v1, &v2));
+                                        },
+                                        "nand" => {
+                                            let v2: Snack = stack.pop().unwrap();
+                                            let v1: Snack = stack.pop().unwrap();
+                                            stack.pop();//pop off nand
+                                            stack.pop();//pop off plz
+
+                                            stack.push(standard_library::nand(&v1, &v2));
+                                        },                                        
+                                        
+                                        
                                         _ => {
                                             panic!("function_pointer: {} has no definition", s);
-                                        }              
+                                        },                                        
                                     }                                    
                                 }
                             },

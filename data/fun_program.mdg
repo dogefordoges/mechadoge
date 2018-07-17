@@ -62,8 +62,29 @@ plz bark 42=43
 
 plz umm 1=1
 
-plz is 2 4
-plz bark
+plz isnot 2 4
+plz umm
 
 plz is 1 1
-plz bark
+plz umm
+
+plz and 1=1 1=1
+plz umm
+
+plz or 1=1 1=2
+plz umm
+
+plz bigger 2 1
+plz umm
+
+plz biggerish 1 1
+plz umm
+
+plz smaller 2 3
+plz umm
+
+plz smallerish 1 2
+plz umm
+
+plz nand 1=1 1=2
+plz umm

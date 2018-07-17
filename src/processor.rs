@@ -1,4 +1,40 @@
 use std::collections::HashMap;
+use std::fmt;
+
+#[derive(Clone, Debug)]
+pub enum Snack {
+    INT(i64),
+    UINT(u64),
+    FLOAT(f64),
+    STRING(String),
+    BOOLEAN(bool)
+}
+
+impl fmt::Display for Snack {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match &self {
+            Snack::STRING(s) => {
+                write!(f, "{}", s)
+            },
+            Snack::INT(i) => {
+                write!(f, "{}", i)
+            },
+            Snack::UINT(u) => {
+                write!(f, "{}", u)
+            },
+            Snack::FLOAT(n) => {
+                write!(f, "{}", n) 
+            },
+            Snack::BOOLEAN(n) => {
+                if *n {
+                   write!(f, "1=1")
+                } else {
+                    write!(f, "1=2")
+                }
+            },
+        }
+    }
+}
 
 pub fn process_comments(lines: Vec<String>) -> Vec<String> {
 
@@ -208,12 +244,12 @@ pub fn process_global_scope(mut lines: Vec<String>) -> Vec<String> {
     return lines;
 }
 
-pub fn process_strings(mut lines: Vec<String>) -> (Vec<String>, HashMap<String, String>) {
+pub fn process_strings(mut lines: Vec<String>) -> (Vec<String>, HashMap<String, Snack>) {
     let mut i = 0;
 
     let mut string_count = 0;
 
-    let mut string_heap: HashMap<String, String> = HashMap::<String, String>::new();
+    let mut string_heap: HashMap<String, Snack> = HashMap::<String, Snack>::new();
 
     loop {
 
@@ -243,7 +279,7 @@ pub fn process_strings(mut lines: Vec<String>) -> (Vec<String>, HashMap<String, 
                     if !in_string {
                         in_string = true;
                     } else {
-                        in_string = false;
+                        //in_string = false;
                         mechadoge_str.push('"');
                         break
                     }
@@ -265,7 +301,7 @@ pub fn process_strings(mut lines: Vec<String>) -> (Vec<String>, HashMap<String, 
 
             new_str.retain(|c| c != '"');
 
-            string_heap.insert(string_pointer, new_str);
+            string_heap.insert(string_pointer, Snack::STRING(new_str));
 
             string_count = string_count + 1;
         } else {
@@ -277,13 +313,65 @@ pub fn process_strings(mut lines: Vec<String>) -> (Vec<String>, HashMap<String, 
     return (lines, string_heap);
 }
 
-fn function_helper(lines: Vec<String>, line_number: usize) -> (Vec<String>, HashMap<String, Vec<String>>) {
+pub fn stackify(tokens: Vec<Snack>) -> Vec<Snack> {
+    let mut new_tokens: Vec<Snack> = Vec::<Snack>::new();
+    let mut stack: Vec<Snack> = Vec::<Snack>::new();
+
+    for token in tokens.iter().rev() {
+        match token {
+            Snack::STRING(s) => {
+                let t: &str = &s.clone();
+
+                match t {
+                    "very" => {
+                        stack.push(token.clone());//push "very"
+                        loop {
+                            if stack.len() == 0 { break }
+                            new_tokens.push(stack.pop().unwrap());
+                        }
+                    },
+                    "plz" => {
+                        stack.push(token.clone());//push "plz"
+                        loop {
+                            if stack.len() == 0 { break }
+                            new_tokens.push(stack.pop().unwrap());
+                        }
+                        
+                    },
+                    _ => { stack.push(token.clone()) }
+                }
+                
+            },
+            _ => {
+                stack.push(token.clone());
+            }
+        }
+    }
+
+    for s in stack {
+        new_tokens.push(s);
+    }
+
+    new_tokens.reverse();
+    
+    return new_tokens;
+}
+
+#[derive(Clone, Debug)]
+pub struct Function {
+    pub num_args: usize,
+    pub parameter_names: Vec<String>,
+    pub body: Vec<Snack>
+}
+
+
+fn function_helper(lines: Vec<String>, line_number: usize) -> (Vec<String>, HashMap<String, Function>) {
     let mut i = line_number;
 
-    let mut function_heap: HashMap<String, Vec<String>> = HashMap::new();
+    let mut function_heap: HashMap<String, Function> = HashMap::<String, Function>::new();
     let mut new_lines: Vec<String> = Vec::<String>::new();
 
-    let mut function_body: Vec<String> = Vec::<String>::new();
+    let mut function_body: Function = Function { num_args: 0, parameter_names: Vec::<String>::new(), body: Vec::<Snack>::new() };
     let mut func_pointer: &str = "";
     let mut start_number: &str = "";
 
@@ -295,7 +383,7 @@ fn function_helper(lines: Vec<String>, line_number: usize) -> (Vec<String>, Hash
 
         if lines[i].contains("FUNC_START") && func_pointer != "" {
             let (newest_lines, newest_heap) = function_helper(lines.clone(), i);
-            function_body.push(newest_lines[0].clone());
+            function_body.body.push(snackify(newest_lines[0].clone()));
 
             let len: usize = newest_lines.len();
 
@@ -332,8 +420,9 @@ fn function_helper(lines: Vec<String>, line_number: usize) -> (Vec<String>, Hash
 
             let args: Vec<&str> = split_line[j..split_line.len()].to_vec();
 
-            function_body.push(args.len().to_string());
-            for arg in args.iter().rev() { function_body.push(arg.to_string()) }
+            function_body.num_args = args.len();
+
+            for arg in args.iter().rev() { function_body.parameter_names.push(arg.to_string()) }
 
             let mut new_line: String = String::new();
 
@@ -362,7 +451,7 @@ fn function_helper(lines: Vec<String>, line_number: usize) -> (Vec<String>, Hash
         } else {
             let tokens: Vec<&str> = lines[i].split(" ").filter(|t| t != &"" && t != &" ").collect();
 
-            for t in tokens { function_body.push(t.to_string()) }
+            for t in tokens { function_body.body.push(snackify(t.to_string())) }
 
             new_lines.push("".to_string());
             i = i + 1;
@@ -372,9 +461,9 @@ fn function_helper(lines: Vec<String>, line_number: usize) -> (Vec<String>, Hash
     return (new_lines, function_heap);
 }
 
-pub fn process_functions(mut lines: Vec<String>) -> (Vec<String>, HashMap<String, Vec<String>>) {
+pub fn process_functions(mut lines: Vec<String>) -> (Vec<String>, HashMap<String, Function>) {
     let mut i = 0;
-    let mut function_heap: HashMap<String, Vec<String>> = HashMap::new();
+    let mut function_heap: HashMap<String, Function> = HashMap::new();
 
     loop {
         if i == lines.len() {
@@ -405,10 +494,10 @@ pub fn process_functions(mut lines: Vec<String>) -> (Vec<String>, HashMap<String
     return (final_lines, function_heap);
 }
 
-fn array_helper(tokens: Vec<String>, token_number: usize, mut array_count: usize) -> (Vec<String>, HashMap<String, Vec<String>>, usize) {
-    let mut new_tokens: Vec<String> = Vec::<String>::new();
-    let mut new_heap: HashMap<String, Vec<String>> = HashMap::new();
-    let mut array_body: Vec<String> = Vec::<String>::new();
+fn array_helper(tokens: Vec<Snack>, token_number: usize, mut array_count: usize) -> (Vec<Snack>, HashMap<String, Vec<Snack>>, usize) {
+    let mut new_tokens: Vec<Snack> = Vec::<Snack>::new();
+    let mut new_heap: HashMap<String, Vec<Snack>> = HashMap::new();
+    let mut array_body: Vec<Snack> = Vec::<Snack>::new();
 
     let mut i = token_number;
     let mut array_pointer: String = "".to_string();
@@ -419,49 +508,61 @@ fn array_helper(tokens: Vec<String>, token_number: usize, mut array_count: usize
             panic!("Missing array delimiter!");
         }
 
-        if tokens[i] == "long" && array_pointer != "" {
-            let (newest_tokens, newest_heap, new_array_count) = array_helper(tokens.clone(), i, array_count);
+        let token: Snack = tokens[i].clone();
 
-            array_body.push(newest_tokens[0].clone());
+        match token {
+            Snack::STRING(s) => {
+                if s == "long" && array_pointer != "" {
+                    let (newest_tokens, newest_heap, new_array_count) = array_helper(tokens.clone(), i, array_count);
 
-            new_heap.extend(newest_heap.clone());
+                    array_body.push(newest_tokens[0].clone());
 
-            array_count = new_array_count;
+                    new_heap.extend(newest_heap.clone());
 
-            let mut num_skip_tokens: usize = 0;
+                    array_count = new_array_count;
 
-            for k in newest_heap.keys() {
-                let len: usize = newest_heap.get(k).unwrap().len();
+                    let mut num_skip_tokens: usize = 0;
 
-                num_skip_tokens = num_skip_tokens + (len + 2);
+                    for k in newest_heap.keys() {
+                        let len: usize = newest_heap.get(k).unwrap().len();
+
+                        num_skip_tokens = num_skip_tokens + (len + 2);
+                    }
+
+                    for _ in 0..num_skip_tokens { new_tokens.push(Snack::STRING("".to_string())) }
+
+                    i = i + num_skip_tokens;
+                    
+                } else if s == "long" {
+                    array_pointer = format!("ARR_START_{}", array_count);
+                    new_tokens.push(Snack::STRING(array_pointer.to_string()));
+                    array_count = array_count + 1;
+                    i = i + 1;
+                } else if s == "boi" {
+                    new_heap.insert(array_pointer, array_body);
+                    new_tokens.push(Snack::STRING("".to_string()));  
+                    break
+                } else {
+                    array_body.push(tokens[i].clone());
+                    new_tokens.push(Snack::STRING("".to_string()));
+                    i = i + 1;
+                }            
+                
+            },
+            _ => {
+                array_body.push(tokens[i].clone());
+                new_tokens.push(Snack::STRING("".to_string()));
+                i = i + 1;
             }
-
-            for _ in 0..num_skip_tokens { new_tokens.push("".to_string()) }
-
-            i = i + num_skip_tokens;
-            
-        } else if tokens[i] == "long" {
-            array_pointer = format!("ARR_START_{}", array_count);
-            new_tokens.push(array_pointer.to_string());
-            array_count = array_count + 1;
-            i = i + 1;
-        } else if tokens[i] == "boi" {
-            new_heap.insert(array_pointer, array_body);
-            new_tokens.push("".to_string());                
-            break
-        } else {
-            array_body.push(tokens[i].clone());
-            new_tokens.push("".to_string());
-            i = i + 1;
-        }            
+        }
     }
 
     return (new_tokens, new_heap, array_count);
 }
 
-pub fn process_arrays(mut tokens: Vec<String>) -> (Vec<String>, HashMap<String, Vec<String>>) {
+pub fn process_arrays(mut tokens: Vec<Snack>) -> (Vec<Snack>, HashMap<String, Vec<Snack>>) {
     let mut i: usize = 0;
-    let mut array_heap: HashMap<String, Vec<String>> = HashMap::new();
+    let mut array_heap: HashMap<String, Vec<Snack>> = HashMap::<String, Vec<Snack>>::new();
     let mut array_count: usize = 0;
 
     loop {
@@ -470,72 +571,84 @@ pub fn process_arrays(mut tokens: Vec<String>) -> (Vec<String>, HashMap<String, 
             break
         }
 
-        if tokens[i] == "long" {
-            let (new_tokens, new_heap, new_array_count) = array_helper(tokens.clone(), i, array_count);
+        let token: Snack = tokens[i].clone();
 
-            let len: usize = new_tokens.len();
+        match token {
+            Snack::STRING(s) => {
+                if s == "long" {
+                    let (new_tokens, new_heap, new_array_count) = array_helper(tokens.clone(), i, array_count);
 
-            for j in 0..len {
-                tokens[i+j] = new_tokens[j].clone();
+                    let len: usize = new_tokens.len();
+
+                    for j in 0..len {
+                        tokens[i+j] = new_tokens[j].clone();
+                    }
+
+                    array_heap.extend(new_heap);
+
+                    array_count = new_array_count;
+
+                    i = i + len;
+                } else {
+                    i = i + 1;
+                }
+                
+            },
+            _ => {
+                i = i + 1;
             }
-
-            array_heap.extend(new_heap);
-
-            array_count = new_array_count;
-
-            i = i + len;
-        } else {
-            i = i + 1;
         }
+
     }
 
-    let final_tokens: Vec<String> = tokens.iter().filter(|t| t != &"" && t != &" ").map(|t| t.to_string()).collect();
+    let final_tokens: Vec<Snack> = tokens.iter().filter(|t| match t {
+        Snack::STRING(s) => {
+            s != &"" && s != &" "
+        },
+        _ => {
+            true
+        }
+    }).map(|snack| snack.clone()).collect();
 
     return (final_tokens, array_heap);
 }
 
-pub fn stackify(tokens: Vec<String>) -> Vec<String> {
-    let mut new_tokens: Vec<String> = Vec::<String>::new();
-    let mut stack: Vec<String> = Vec::<String>::new();
+pub fn snackify(token: String) -> Snack {    
 
-    for token in tokens.iter().rev() {
-        let t: &str = &token.clone();
-        match t {
-            "very" => {
-                stack.push(token.to_string());//push "very"
-                loop {
-                    if stack.len() == 0 { break }
-                    new_tokens.push(stack.pop().unwrap());
-                }
-            },
-            "plz" => {
-                stack.push(token.to_string());//push "plz"
-                loop {
-                    if stack.len() == 0 { break }
-                    new_tokens.push(stack.pop().unwrap());
-                }
-                
-            },
-            _ => { stack.push(token.to_string()) }
+    if token.parse::<u64>().is_ok() {
+        return Snack::UINT(token.parse().unwrap());
+    }
+
+    if token.parse::<i64>().is_ok() {
+        return Snack::INT(token.parse().unwrap());
+    }
+
+    if token.parse::<f64>().is_ok() {
+        return Snack::FLOAT(token.parse().unwrap());
+    }
+
+    if token.contains("=") {
+        let split_tokens: Vec<&str> = token.split("=").collect();
+
+        assert_eq!(split_tokens.len(), 2, "{} is not correct Ex: `1=1`", token);
+
+        if split_tokens[0] == split_tokens[1] {
+            return Snack::BOOLEAN(true);
+        } else {
+            return Snack::BOOLEAN(false);
         }
     }
-
-    for s in stack {
-        new_tokens.push(s);
-    }
-
-    new_tokens.reverse();
     
-    return new_tokens;
+    return Snack::STRING(token);
 }
 
 pub struct Context {
-    pub string_heap: HashMap<String, String>,
-    pub function_heap: HashMap<String, Vec<String>>,
-    pub array_heap: HashMap<String, Vec<String>>,
+    pub string_heap: HashMap<String, Snack>,
+    pub function_heap: HashMap<String, Function>,
+    pub array_heap: HashMap<String, Vec<Snack>>,
 }
 
-pub fn preprocess_code(lines: Vec<String>) -> (Vec<String>, Context) {
+pub fn preprocess_code(lines: Vec<String>) -> (Vec<Snack>, Context) {
     let processed_comments: Vec<String> = process_comments(lines);
     let (processed_strings, string_heap) = process_strings(processed_comments);
     let processed_local_scope: Vec<String> = process_local_scope(processed_strings);
@@ -551,7 +664,7 @@ pub fn preprocess_code(lines: Vec<String>) -> (Vec<String>, Context) {
         }
     }
     
-    let (processed_arrays, array_heap) = process_arrays(tokens);
+    let (processed_arrays, array_heap) = process_arrays(tokens.iter().map(|t| snackify(t.to_string())).collect());
 
     let context = Context {
         string_heap: string_heap,
@@ -637,8 +750,8 @@ mod processor_tests {
         let output_lines = read_to_lines("data/string_test_output.mdg");
         let (output, string_heap) = process_strings(input_lines);
 
-        assert_eq!("all your base belong to us", string_heap.get("STR_0").unwrap());
-        assert_eq!("- mechadoge", string_heap.get("STR_1").unwrap());
+        assert_eq!("all your base belong to us", string_heap.get("STR_0").unwrap().to_string());
+        assert_eq!("- mechadoge", string_heap.get("STR_1").unwrap().to_string());
 
         for i in 0..output.len() {
             assert_eq!(output[i], output_lines[i]);
@@ -650,16 +763,18 @@ mod processor_tests {
         let input_lines = read_to_lines("data/function_test_input.mdg");
         let output_lines = read_to_lines("data/function_test_output.mdg");
         
-        let (output, output_heap): (Vec<String>, HashMap<String, Vec<String>>) = process_functions(input_lines);
+        let (output, output_heap): (Vec<String>, HashMap<String, Function>) = process_functions(input_lines);
 
         let function_body_lines = read_to_lines("data/function_body_test.txt");
 
-        let func_body: Vec<String> = output_heap.get("FUNC_START_0").unwrap().to_vec();
+        let func: &Function = output_heap.get("FUNC_START_0").unwrap();
+        assert_eq!(func.num_args, 1);
+        assert_eq!(func.parameter_names[0], "0_0");
 
-        assert_eq!(func_body.len(), function_body_lines.len());
+        assert_eq!(func.body.len(), function_body_lines.len());
 
-        for i in 0..func_body.len() {
-            assert_eq!(func_body[i], function_body_lines[i]);
+        for i in 0..func.body.len() {
+            assert_eq!(func.body[i].to_string(), function_body_lines[i]);
         }
 
         assert_eq!(output.len(), output_lines.len());
@@ -672,22 +787,22 @@ mod processor_tests {
     #[test]
     fn test_array_processor() {
         let input_tokens = read_to_tokens("data/array_test_input.mdg");
-        let output_tokens = read_to_tokens("data/array_test_output.mdg");
-        let (output, output_heap): (Vec<String>, HashMap<String, Vec<String>>) = process_arrays(input_tokens);
+        let output_tokens = read_to_tokens("data/array_test_output.mdg");        
+        let (output, output_heap): (Vec<Snack>, HashMap<String, Vec<Snack>>) = process_arrays(input_tokens.iter().map(|t| snackify(t.to_string())).collect());
 
         let array_body_lines = read_to_lines("data/array_body_test.txt");
-        let array_body: Vec<String> = output_heap.get("ARR_START_0").unwrap().to_vec();
+        let array_body: Vec<Snack> = output_heap.get("ARR_START_0").unwrap().to_vec();
 
         assert_eq!(array_body.len(), array_body_lines.len());
 
         for i in 0..array_body.len() {
-            assert_eq!(array_body[i], array_body_lines[i]);
+            assert_eq!(array_body[i].to_string(), array_body_lines[i]);
         }
 
         assert_eq!(output.len(), output_tokens.len());
 
         for i in 0..output.len() {
-            assert_eq!(output[i], output_tokens[i]);
+            assert_eq!(output[i].to_string(), output_tokens[i]);
         }
         
     }
@@ -696,13 +811,16 @@ mod processor_tests {
     fn test_preprocessor() {
         let input_lines = read_to_lines("data/preprocessor_test_input.mdg");
         let output_tokens = read_to_lines("data/preprocessor_test_output.txt");
-        let (output, context): (Vec<String>, Context) = preprocess_code(input_lines);
+        let (output, _context): (Vec<Snack>, Context) = preprocess_code(input_lines);
 
         match File::create("data/preprocessor_out.txt") {
             Ok(f) => {
                 let mut file = f;
                 for t in output.clone() {
-                    write!(file, "{}\n", t);
+                    match write!(file, "{}\n", t) {
+                        Err(e) => { panic!("{}", e) },
+                        _ => { () }
+                    }
                 }
             },
             Err(e) => { panic!("{}", e) }
@@ -711,7 +829,31 @@ mod processor_tests {
         assert_eq!(output.len(), output_tokens.len());
 
         for i in 0..output.len() {
-            assert_eq!(output[i], output_tokens[i]);
+            assert_eq!(output[i].to_string(), output_tokens[i]);
         }
+    }
+
+    #[test]
+    fn test_snackify() {
+        match snackify("1".to_string()) {
+            Snack::UINT(_u) => { () },
+            _ => { panic!("not an unsigned int!"); }
+        }
+
+        match snackify("-1".to_string()) {
+            Snack::INT(_i) => { () },
+            _ => { panic!("not an unsigned int!"); }
+        }
+
+        match snackify("1.5".to_string()) {
+            Snack::FLOAT(_f) => { () },
+            _ => { panic!("not an unsigned int!"); }
+        }
+
+        match snackify("foo.-4".to_string()) {
+            Snack::STRING(_s) => { () },
+            _ => { panic!("not an unsigned int!"); }
+        }
+                
     }
 }

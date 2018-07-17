@@ -67,7 +67,7 @@ fn add(v1: &Snack, v2: &Snack) -> Snack {
             }
         },
         _ => {
-            panic!("Only numeric values allowed as input to add");
+            panic!("Only numeric values allowed as input to add. Found: {:?} {:?}", v1, v2);
         }
     }
 }
@@ -80,7 +80,7 @@ fn sub(v1: &Snack, v2: &Snack) -> Snack {
                     Snack::INT(i1 - i2)
                 },
                 _ => {
-                    panic!("Numeric values given to add must be of same type, found: {:?} {:?}", v1, v2);
+                    panic!("Numeric values given to sub must be of same type, found: {:?} {:?}", v1, v2);
                 }
             }
         },
@@ -90,7 +90,7 @@ fn sub(v1: &Snack, v2: &Snack) -> Snack {
                     Snack::UINT(u1 - u2)
                 },
                 _ => {
-                    panic!("Numeric values given to add must be of same type, found: {:?} {:?}", v1, v2);
+                    panic!("Numeric values given to sub must be of same type, found: {:?} {:?}", v1, v2);
                 }
             }
         },
@@ -100,12 +100,12 @@ fn sub(v1: &Snack, v2: &Snack) -> Snack {
                     Snack::FLOAT(f1 - f2)
                 },
                 _ => {
-                    panic!("Numeric values given to add must be of same type, found: {:?} {:?}", v1, v2);
+                    panic!("Numeric values given to sub must be of same type, found: {:?} {:?}", v1, v2);
                 }
             }
         },
         _ => {
-            panic!("Only numeric values allowed as input to add");
+            panic!("Only numeric values allowed as input to sub, found: {:?} {:?}", v1, v2);
         }
     }
 }
@@ -118,7 +118,7 @@ fn mul(v1: &Snack, v2: &Snack) -> Snack {
                     Snack::INT(i1 * i2)
                 },
                 _ => {
-                    panic!("Numeric values given to add must be of same type, found: {:?} {:?}", v1, v2);
+                    panic!("Numeric values given to mul must be of same type, found: {:?} {:?}", v1, v2);
                 }
             }
         },
@@ -128,7 +128,7 @@ fn mul(v1: &Snack, v2: &Snack) -> Snack {
                     Snack::UINT(u1 * u2)
                 },
                 _ => {
-                    panic!("Numeric values given to add must be of same type, found: {:?} {:?}", v1, v2);
+                    panic!("Numeric values given to mul must be of same type, found: {:?} {:?}", v1, v2);
                 }
             }
         },
@@ -138,12 +138,12 @@ fn mul(v1: &Snack, v2: &Snack) -> Snack {
                     Snack::FLOAT(f1 * f2)
                 },
                 _ => {
-                    panic!("Numeric values given to add must be of same type, found: {:?} {:?}", v1, v2);
+                    panic!("Numeric values given to mul must be of same type, found: {:?} {:?}", v1, v2);
                 }
             }
         },
         _ => {
-            panic!("Only numeric values allowed as input to add");
+            panic!("Only numeric values allowed as input to mul, found: {:?} {:?}", v1, v2);
         }
     }
 }
@@ -156,7 +156,7 @@ fn div(v1: &Snack, v2: &Snack) -> Snack {
                     Snack::INT(i1 / i2)
                 },
                 _ => {
-                    panic!("Numeric values given to add must be of same type, found: {:?} {:?}", v1, v2);
+                    panic!("Numeric values given to div must be of same type, found: {:?} {:?}", v1, v2);
                 }
             }
         },
@@ -166,7 +166,7 @@ fn div(v1: &Snack, v2: &Snack) -> Snack {
                     Snack::UINT(u1 / u2)
                 },
                 _ => {
-                    panic!("Numeric values given to add must be of same type, found: {:?} {:?}", v1, v2);
+                    panic!("Numeric values given to div must be of same type, found: {:?} {:?}", v1, v2);
                 }
             }
         },
@@ -176,12 +176,12 @@ fn div(v1: &Snack, v2: &Snack) -> Snack {
                     Snack::FLOAT(f1 / f2)
                 },
                 _ => {
-                    panic!("Numeric values given to add must be of same type, found: {:?} {:?}", v1, v2);
+                    panic!("Numeric values given to div must be of same type, found: {:?} {:?}", v1, v2);
                 }
             }
         },
         _ => {
-            panic!("Only numeric values allowed as input to add");
+            panic!("Only numeric values allowed as input to div, found: {:?} {:?}", v1, v2);
         }
     }
 }
@@ -316,6 +316,48 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
                                             stack.pop();//pop off plz
 
                                             stack.push(div(&v1, &v2));
+                                        },
+                                        "float" => {
+                                            let v: Snack = stack.pop().unwrap();
+                                            stack.pop();//pop off float
+                                            stack.pop();//pop off plz
+
+                                            match v {
+                                                Snack::FLOAT(_) => { stack.push(v); },
+                                                Snack::INT(i) => { stack.push(Snack::FLOAT(i as f64)); },
+                                                Snack::UINT(u) => { stack.push(Snack::FLOAT(u as f64)); },
+                                                _ => {
+                                                    panic!("Cannot convert {:?} to float");
+                                                }
+                                            }
+                                        },
+                                        "int" => {
+                                            let v: Snack = stack.pop().unwrap();
+                                            stack.pop();//pop off int
+                                            stack.pop();//pop off plz
+
+                                            match v {
+                                                Snack::INT(_) => { stack.push(v); },
+                                                Snack::FLOAT(f) => { stack.push(Snack::INT(f as i64)); },
+                                                Snack::UINT(u) => { stack.push(Snack::INT(u as i64)); },
+                                                _ => {
+                                                    panic!("Cannot convert {:?} to int");
+                                                }
+                                            }                                            
+                                        }
+                                        "uint" => {
+                                            let v: Snack = stack.pop().unwrap();
+                                            stack.pop();//pop off uint
+                                            stack.pop();//pop off plz
+
+                                            match v {
+                                                Snack::UINT(_) => { stack.push(v); },
+                                                Snack::FLOAT(f) => { stack.push(Snack::UINT(f as u64)); },
+                                                Snack::INT(i) => { stack.push(Snack::UINT(i as u64)); },
+                                                _ => {
+                                                    panic!("Cannot convert {:?} to uint");
+                                                }
+                                            }                                            
                                         },                                        
                                         _ => {
                                             panic!("function_pointer: {} has no definition", s);

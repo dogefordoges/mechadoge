@@ -23,9 +23,6 @@ impl fmt::Display for Snack {
             },
             Snack::FLOAT(n) => {
                 write!(f, "{}", n) 
-            },
-            _ => {
-                panic!("Unable to display {:?}", self);
             }
         }
     }
@@ -274,7 +271,7 @@ pub fn process_strings(mut lines: Vec<String>) -> (Vec<String>, HashMap<String, 
                     if !in_string {
                         in_string = true;
                     } else {
-                        in_string = false;
+                        //in_string = false;
                         mechadoge_str.push('"');
                         break
                     }
@@ -794,13 +791,16 @@ mod processor_tests {
     fn test_preprocessor() {
         let input_lines = read_to_lines("data/preprocessor_test_input.mdg");
         let output_tokens = read_to_lines("data/preprocessor_test_output.txt");
-        let (output, context): (Vec<Snack>, Context) = preprocess_code(input_lines);
+        let (output, _context): (Vec<Snack>, Context) = preprocess_code(input_lines);
 
         match File::create("data/preprocessor_out.txt") {
             Ok(f) => {
                 let mut file = f;
                 for t in output.clone() {
-                    write!(file, "{}\n", t);
+                    match write!(file, "{}\n", t) {
+                        Err(e) => { panic!("{}", e) },
+                        _ => { () }
+                    }
                 }
             },
             Err(e) => { panic!("{}", e) }
@@ -816,22 +816,22 @@ mod processor_tests {
     #[test]
     fn test_snackify() {
         match snackify("1".to_string()) {
-            Snack::UINT(u) => { () },
+            Snack::UINT(_u) => { () },
             _ => { panic!("not an unsigned int!"); }
         }
 
         match snackify("-1".to_string()) {
-            Snack::INT(i) => { () },
+            Snack::INT(_i) => { () },
             _ => { panic!("not an unsigned int!"); }
         }
 
         match snackify("1.5".to_string()) {
-            Snack::FLOAT(f) => { () },
+            Snack::FLOAT(_f) => { () },
             _ => { panic!("not an unsigned int!"); }
         }
 
         match snackify("foo.-4".to_string()) {
-            Snack::STRING(s) => { () },
+            Snack::STRING(_s) => { () },
             _ => { panic!("not an unsigned int!"); }
         }
                 

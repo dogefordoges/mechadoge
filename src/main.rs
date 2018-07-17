@@ -18,6 +18,21 @@ fn read_to_lines(filename: &str) -> Vec<String> {
     return lines;
 }
 
+fn bark(value: String, global_variables: &HashMap<String, Snack>, string_heap: &HashMap<String, Snack>) {
+
+    let mut print_value: String = value.clone();
+
+    if print_value.contains("GLOBAL") {
+        print_value = global_variables.get(&print_value).unwrap().to_string();
+    }
+
+    if print_value.contains("STR") {
+        print_value = string_heap.get(&print_value).unwrap().to_string();
+    }
+
+    println!("{}", print_value);
+}
+
 fn interpret(tokens: Vec<Snack>, context: processor::Context) {
     let mut stack: Vec<Snack>  = tokens.clone();
     stack.reverse();
@@ -28,6 +43,8 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
     loop {
 
         let token: Snack = stack[stack_pointer].clone();
+
+        //println!("{}", token);
 
         match token {
             Snack::STRING(s) => {
@@ -76,76 +93,58 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
                                         let function: &processor::Function = context.function_heap.get(&function_pointer).unwrap();
 
                                         let mut local_scope: HashMap<String, Snack> = HashMap::<String, Snack>::new();
-                                        
+
                                         for i in 0..function.num_args {
                                             let parameter_value: Snack = stack.pop().unwrap();
                                             local_scope.insert(function.parameter_names[i].clone(), parameter_value);
                                         }
 
-                                        stack.pop();//pop off function name
-                                        stack.pop();//pop off "plz"
+                                        stack.pop();
+                                        stack.pop();
 
                                         for code in processor::stackify(function.body.clone()).iter().rev() {
                                             match code {
-                                                processor::Snack::STRING(s) => {
-                                                    if local_scope.contains_key(s) {
-                                                        let snack: Snack = local_scope.get(s).unwrap().clone();
+                                                processor::Snack::STRING(local_var) => {
+                                                    if local_scope.contains_key(local_var) {
+                                                        let snack: Snack = local_scope.get(local_var).unwrap().clone();
                                                         stack.push(snack);
+                                                    } else {
+                                                        stack.push(code.clone())
                                                     }
                                                 },
                                                 _ => {
-                                                    stack.push(code.clone());
+                                                    stack.push(code.clone())
                                                 }
                                             }
                                         }
 
                                         stack_pointer = stack.len() - 1;
                                         
-                                    } else {
-                                        panic!("function pointer: {} has no definition", function_pointer);   
                                     }
                                 } else {
                                     let func: &str = &s;
+
                                     match func {
                                         "bark" => {
                                             let value: Snack = stack.pop().unwrap();
-                                            stack.pop();//pop off "bark"
-                                            stack.pop();//pop off "plz"
+                                            stack.pop();
+                                            stack.pop();
 
-                                            match value {
-                                                Snack::STRING(s2) => {
-                                                    //if value == "bark" {
-                                                    //    panic!("no input available for bark");
-                                                    //}
-
-                                                    if s2.contains("GLOBAL") {
-                                                        println!("{}", global_variables.get(&s2).unwrap());
-                                                    }
-
-                                                    if s2.contains("STR") {
-                                                        println!("{}", context.string_heap.get(&s2).unwrap());
-                                                    }
-
-                                                    println!("{}", s2);
-                                                    
-                                                },
-                                                _ => {
-                                                    panic!("Expecting STRING for function name, found {:?}", value);
-                                                }
-                                            }
+                                            bark(value.to_string(), &global_variables, &context.string_heap);
                                         },
                                         _ => {
-                                            panic!("function: {:?} not found", s);
+                                            panic!("function_pointer: {} has no definition", s);
                                         }
-                                    }
-                                }
+                                    }                                    
+                                }                                
                             },
                             _ => {
-                                panic!("Expecting STRING, found {:?}", function_name.clone());
+                                panic!("Expecting {} to be string", function_name);
                             }
                         }
                     },
                     _ => {
+                        //should panic?
                         ()
                     }
                 }
@@ -159,6 +158,7 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
         if stack_pointer == 0 {
             break
         }
+        
         stack_pointer = stack_pointer - 1;
     }
     

@@ -6,7 +6,8 @@ pub enum Snack {
     INT(i64),
     UINT(u64),
     FLOAT(f64),
-    STRING(String)
+    STRING(String),
+    BOOLEAN(bool)
 }
 
 impl fmt::Display for Snack {
@@ -23,7 +24,14 @@ impl fmt::Display for Snack {
             },
             Snack::FLOAT(n) => {
                 write!(f, "{}", n) 
-            }
+            },
+            Snack::BOOLEAN(n) => {
+                if *n {
+                   write!(f, "1=1")
+                } else {
+                    write!(f, "1=2")
+                }
+            },
         }
     }
 }
@@ -605,7 +613,7 @@ pub fn process_arrays(mut tokens: Vec<Snack>) -> (Vec<Snack>, HashMap<String, Ve
     return (final_tokens, array_heap);
 }
 
-pub fn snackify(token: String) -> Snack {
+pub fn snackify(token: String) -> Snack {    
 
     if token.parse::<u64>().is_ok() {
         return Snack::UINT(token.parse().unwrap());
@@ -619,6 +627,18 @@ pub fn snackify(token: String) -> Snack {
         return Snack::FLOAT(token.parse().unwrap());
     }
 
+    if token.contains("=") {
+        let split_tokens: Vec<&str> = token.split("=").collect();
+
+        assert_eq!(split_tokens.len(), 2, "{} is not correct Ex: `1=1`", token);
+
+        if split_tokens[0] == split_tokens[1] {
+            return Snack::BOOLEAN(true);
+        } else {
+            return Snack::BOOLEAN(false);
+        }
+    }
+    
     return Snack::STRING(token);
 }
 

@@ -358,7 +358,17 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
                                                     panic!("Cannot convert {:?} to uint");
                                                 }
                                             }                                            
-                                        },                                        
+                                        },
+                                        "dose" => {
+                                            let v: Snack = stack.pop().unwrap();
+                                            stack.pop();//pop off uint
+                                            stack.pop();//pop off plz
+
+                                            match v {
+                                                Snack::BOOLEAN(b) => { assert!(b); },
+                                                _ => { panic!("Expecting boolean, found {:?}", v); }
+                                            }
+                                        },
                                         _ => {
                                             panic!("function_pointer: {} has no definition", s);
                                         }                                        

@@ -29,8 +29,6 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
 
         let token: Snack = stack[stack_pointer].clone();
 
-        println!("{:?}", token);
-
         match token {
             Snack::STRING(s) => {
                 let t: &str = &s;
@@ -38,12 +36,19 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
                 match t {
                     "very" => {
                         let variable: Snack = stack.pop().unwrap();
+                        //println!("{:?}", variable);
 
                         let variable_name: Snack = stack.pop().unwrap();
+                        
+                        //println!("{:?}", variable_name);
 
                         match variable_name {
                             Snack::STRING(s) => {
-                                global_variables.insert(s, variable);
+                                if s.contains("GLOBAL") {
+                                    global_variables.insert(s, variable);
+                                } else {
+                                    panic!("Expecting global variable. Found {:?}", s);
+                                }
                             },
                             _ => {
                                 panic!("Expecting string. Found {:?}", variable_name);

@@ -15,6 +15,15 @@ impl fmt::Display for Snack {
             Snack::STRING(s) => {
                 write!(f, "{}", s)
             },
+            Snack::INT(i) => {
+                write!(f, "{}", i)
+            },
+            Snack::UINT(u) => {
+                write!(f, "{}", u)
+            },
+            Snack::FLOAT(n) => {
+                write!(f, "{}", n) 
+            },
             _ => {
                 panic!("Unable to display {:?}", self);
             }
@@ -748,7 +757,7 @@ mod processor_tests {
         assert_eq!(func.body.len(), function_body_lines.len());
 
         for i in 0..func.body.len() {
-            assert_eq!(func.body[i], function_body_lines[i]);
+            assert_eq!(func.body[i].to_string(), function_body_lines[i]);
         }
 
         assert_eq!(output.len(), output_lines.len());
@@ -761,8 +770,8 @@ mod processor_tests {
     #[test]
     fn test_array_processor() {
         let input_tokens = read_to_tokens("data/array_test_input.mdg");
-        let output_tokens = read_to_tokens("data/array_test_output.mdg");
-        let (output, output_heap): (Vec<String>, HashMap<String, Vec<Snack>>) = process_arrays(input_tokens);
+        let output_tokens = read_to_tokens("data/array_test_output.mdg");        
+        let (output, output_heap): (Vec<Snack>, HashMap<String, Vec<Snack>>) = process_arrays(input_tokens.iter().map(|t| snackify(t.to_string())).collect());
 
         let array_body_lines = read_to_lines("data/array_body_test.txt");
         let array_body: Vec<Snack> = output_heap.get("ARR_START_0").unwrap().to_vec();
@@ -776,7 +785,7 @@ mod processor_tests {
         assert_eq!(output.len(), output_tokens.len());
 
         for i in 0..output.len() {
-            assert_eq!(output[i], output_tokens[i]);
+            assert_eq!(output[i].to_string(), output_tokens[i]);
         }
         
     }
@@ -785,7 +794,7 @@ mod processor_tests {
     fn test_preprocessor() {
         let input_lines = read_to_lines("data/preprocessor_test_input.mdg");
         let output_tokens = read_to_lines("data/preprocessor_test_output.txt");
-        let (output, context): (Vec<String>, Context) = preprocess_code(input_lines);
+        let (output, context): (Vec<Snack>, Context) = preprocess_code(input_lines);
 
         match File::create("data/preprocessor_out.txt") {
             Ok(f) => {
@@ -800,7 +809,7 @@ mod processor_tests {
         assert_eq!(output.len(), output_tokens.len());
 
         for i in 0..output.len() {
-            assert_eq!(output[i], output_tokens[i]);
+            assert_eq!(output[i].to_string(), output_tokens[i]);
         }
     }
 

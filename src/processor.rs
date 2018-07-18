@@ -438,11 +438,19 @@ fn function_helper(lines: Vec<String>, line_number: usize) -> (Vec<String>, Hash
         } else if lines[i].contains("FUNC_END") {
             let line2: String = lines[i].clone();
             let split_line2: Vec<&str> = line2.split("_").collect();
-            let end_number: &str = split_line2[2];
+
+            let mut end_number: &str = split_line2[2];
+
+            if split_line2[2].contains(" ") {
+                let split_space: Vec<&str> = split_line2[2].split(" ").collect();
+                let new_line: String = split_space[1..split_space.len()].join(" ");
+                new_lines.push(new_line);
+                end_number = split_space[0];
+            } else {
+                new_lines.push("".to_string());
+            }           
 
             function_heap.insert(func_pointer.to_string(), function_body.clone());
-
-            new_lines.push("".to_string());
 
             if end_number == start_number {
                 break

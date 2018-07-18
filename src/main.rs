@@ -7,6 +7,8 @@ use processor::Snack;
 
 mod standard_library;
 
+use std::env;
+
 fn read_to_lines(filename: &str) -> Vec<String> {
     let mut f = File::open(filename).expect("file not found");
     let mut contents = String::new();
@@ -281,7 +283,6 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
                                             stack.push(standard_library::nand(&v1, &v2));
                                         },                                        
                                         
-                                        
                                         _ => {
                                             panic!("function_pointer: {} has no definition", s);
                                         },                                        
@@ -314,9 +315,26 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
     
 }
 
+fn handle_input() -> Vec<String> {
+    assert!(env::args().len() > 1, "No input file given");
+
+    let filename: String = env::args().last().unwrap().to_string();
+
+    let filename_split: Vec<&str> = filename.split(".").collect();
+
+    assert!(filename_split.len() > 1, "Input file has no file extension");
+
+    assert_eq!(filename_split[1], "mdg", "Wrong file type, expecting `.mdg` found: {}", filename_split[1]);
+    
+    read_to_lines(&filename)
+}
+
 fn main() {
-    let input_lines: Vec<String> = read_to_lines("data/fun_program.mdg");
+
+    let input_lines: Vec<String> = handle_input();
+
     let (processed_code, context): (Vec<Snack>, processor::Context) = processor::preprocess_code(input_lines);
     
     interpret(processed_code, context);
+
 }

@@ -281,8 +281,51 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
                                             stack.pop();//pop off plz
 
                                             stack.push(standard_library::nand(&v1, &v2));
+                                        },
+                                        "each" => {
+                                            let block_pointer: Snack = stack.pop().unwrap();
+                                            let mut function_pointer: String = block_pointer.to_string();                                            
+
+                                            match block_pointer {
+                                                Snack::STRING(s) => {
+                                                    if global_variables.contains_key(&function_pointer) {
+                                                        function_pointer = global_variables.get(&function_pointer).unwrap().to_string();
+                                                    }
+
+                                                    if context.function_heap.contains_key(&function_pointer) {
+                                                        let function: processor::Function = context.function_heap.get(&function_pointer).unwrap().clone();
+
+                                                        assert!(function.num_args == 1, "function must contain up to, and no more than one argument");
+
+                                                        let mut array_pointer: String = stack.pop().unwrap().to_string();
+
+                                                        stack.pop();//pop off each
+                                                        stack.pop();//pop off plz
+
+                                                        if global_variables.contains_key(&array_pointer) {
+                                                            array_pointer = global_variables.get(&array_pointer).unwrap().to_string();
+                                                        }
+
+                                                        assert!(array_pointer.contains("ARR"), "first argument to `each` must be an array");
+
+                                                        let array: Vec<Snack> = context.array_heap.get(&array_pointer).unwrap().to_vec();
+
+                                                        for element in array.iter().rev() {
+                                                            stack.push(Snack::STRING("plz".to_string()));
+                                                            stack.push(Snack::STRING(function_pointer.clone()));
+                                                            stack.push(element.clone());
+                                                        }
+
+                                                        stack_pointer = stack.len() - 1;
+                                                    } else {
+                                                        panic!("Provided function has no definition");
+                                                    }
+                                                },
+                                                _ => {
+                                                    panic!("Expecting Function as second pointer to `each` found: {:?}", block_pointer);
+                                                }
+                                            }
                                         },                                        
-                                        
                                         _ => {
                                             panic!("function_pointer: {} has no definition", s);
                                         },                                        

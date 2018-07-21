@@ -681,7 +681,7 @@ pub fn preprocess_code(lines: Vec<String>) -> (Vec<Snack>, Context) {
     let mut tokens: Vec<String> = Vec::<String>::new();
 
     for l in processed_functions {
-        let line_tokens: Vec<String> = l.split(" ").map(|t| t.to_string()).collect();
+        let line_tokens: Vec<String> = l.split(" ").map(|t| t.trim_matches('\n').to_string()).collect();
         for t in line_tokens {
             tokens.push(t);
         }
@@ -728,9 +728,8 @@ mod processor_tests {
             .expect("something went wrong reading the file");
 
         let mut tokens = Vec::<String>::new();
-
-        contents.split(" ").for_each( |token| tokens.push(token.to_string()));
-
+        
+        contents.lines().for_each( |line| line.split(" ").for_each( |token| tokens.push(token.to_string())));
         return tokens;
     }    
     
@@ -809,10 +808,29 @@ mod processor_tests {
 
     #[test]
     fn test_array_processor() {
-        let input_tokens = read_to_tokens("data/array_test_input.mdg");
-        let output_tokens = read_to_tokens("data/array_test_output.mdg");        
-        let (output, output_heap): (Vec<Snack>, HashMap<String, Vec<Snack>>) = process_arrays(input_tokens.iter().map(|t| snackify(t.to_string())).collect());
+        let mut input_tokens = read_to_tokens("data/array_test_input.mdg");
+        let output_tokens = read_to_tokens("data/array_test_output.mdg");
 
+        input_tokens =
+            input_tokens
+            .iter()
+            .filter(|t| t != &"" && t != &" ")
+            .map(|t| t.to_string())
+            .collect();
+
+        match File::create("data/array_tokens_out.txt") {
+            Ok(f) => {
+                let mut file = f;
+                    match write!(file, "{}", input_tokens.join(" ")) {
+                        Err(e) => { panic!("{}", e) },
+                        _ => { () }
+                    }
+            },
+            Err(e) => { panic!("{}", e) }
+        }        
+                    
+        let (output, output_heap): (Vec<Snack>, HashMap<String, Vec<Snack>>) = process_arrays(input_tokens.iter().map(|t| snackify(t.to_string())).collect());
+        
         let array_body_lines = read_to_lines("data/array_body_test.txt");
         let array_body: Vec<Snack> = output_heap.get("ARR_START_0").unwrap().to_vec();
 

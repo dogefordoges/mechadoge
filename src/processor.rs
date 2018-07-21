@@ -126,9 +126,12 @@ fn local_scope_helper(mut lines: Vec<String>, line_number: usize, mut function_c
         }
 
         if lines[i].contains("wow") {
-            lines[i] = lines[i].replace("wow", &format!("FUNC_END_{}", original_function_count.to_string()));
-
-            function_end = true;
+            let l: String = lines[i].clone();
+            let split_line: Vec<&str> = l.split(" ").collect();
+            if split_line.contains(&"wow") {
+                lines[i] = lines[i].replace("wow", &format!("FUNC_END_{}", original_function_count.to_string()));
+                function_end = true;                
+            }
         }
 
         let mut split_line: Vec<&str> = lines[i].split(" ").collect();
@@ -316,36 +319,48 @@ pub fn process_strings(mut lines: Vec<String>) -> (Vec<String>, HashMap<String, 
 pub fn stackify(tokens: Vec<Snack>) -> Vec<Snack> {
     let mut new_tokens: Vec<Snack> = Vec::<Snack>::new();
     let mut stack: Vec<Snack> = Vec::<Snack>::new();
+    let mut i: usize = tokens.len() - 1;
 
-    for token in tokens.iter().rev() {
-        match token {
+    loop {
+
+        match &tokens[i] {
             Snack::STRING(s) => {
                 let t: &str = &s.clone();
 
                 match t {
                     "very" => {
-                        stack.push(token.clone());//push "very"
+                        stack.push(tokens[i].clone());//push "very"
                         loop {
                             if stack.len() == 0 { break }
                             new_tokens.push(stack.pop().unwrap());
                         }
+                    },
+                    "rly" => {
+                        stack.push(tokens[i].clone());//push "plz"
+                        loop {
+                            if stack.len() == 0 { break }
+                            new_tokens.push(stack.pop().unwrap());
+                        }                        
                     },
                     "plz" => {
-                        stack.push(token.clone());//push "plz"
+                        stack.push(tokens[i].clone());//push "plz"
                         loop {
                             if stack.len() == 0 { break }
                             new_tokens.push(stack.pop().unwrap());
-                        }
-                        
+                        }                        
                     },
-                    _ => { stack.push(token.clone()) }
+                    _ => { stack.push(tokens[i].clone()) }
                 }
                 
             },
             _ => {
-                stack.push(token.clone());
-            }
+                stack.push(tokens[i].clone());
+            }            
         }
+
+        if i == 0 { break }
+        
+        i = i - 1;
     }
 
     for s in stack {

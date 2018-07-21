@@ -60,6 +60,36 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
                         }
                         stack.pop();//pop "very"
                     },
+                    "rly" => {
+                        let boolean: Snack = stack.pop().unwrap();
+
+                        match boolean {
+                            Snack::BOOLEAN(b) => {
+                                if b {
+                                    stack[stack_pointer] = Snack::STRING("plz".to_string());
+
+                                    let function_pointer: String = stack[stack_pointer+1].to_string();
+
+                                    if function_pointer.contains("FUNC_START") {
+                                        let function: &processor::Function = context.function_heap.get(&function_pointer).unwrap();
+
+                                        if function.num_args > 0 {
+                                            panic!("Function after `rly` must expect 0 arguments");
+                                        }
+                                    } else {
+                                        panic!("Expecting function, found {}", function_pointer);
+                                    }
+                                        
+
+                                    stack_pointer = stack_pointer + 1;
+                                } else {
+                                    stack.pop();//pop off "FUNC_START"
+                                    stack.pop();//pop off "rly"
+                                }
+                            },
+                            _ => { panic!("Expecting boolean, found {:?}", boolean) }
+                        }
+                    },
                     "plz" => {
                         let function_name: Snack = stack[stack_pointer+1].clone();
 
@@ -287,7 +317,7 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
                                             let mut function_pointer: String = block_pointer.to_string();                                            
 
                                             match block_pointer {
-                                                Snack::STRING(s) => {
+                                                Snack::STRING(_s) => {
                                                     if global_variables.contains_key(&function_pointer) {
                                                         function_pointer = global_variables.get(&function_pointer).unwrap().to_string();
                                                     }

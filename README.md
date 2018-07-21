@@ -10,6 +10,13 @@ Define a variable like so:
 very doge "much wow"
 ```
 
+## Types
+Mechadoge is dynamically typed but supports a few basic types Integers, Floats, Strings, and Booleans. Mechadoge also supports inline array representations of these values, which is discussed in the data structures section.
+
+The basic types work as expected, however, boolean expressions have a special representation.
+
+`1=1` is the default representation of `true`, and `1=2` is `false`. Any boolean will be output in this form, however, booleans can also be represented with different numbers. Any equivalent numbers surrounding the `=` are represented as true, Ex: `40=40` is true. Whereas any values that are not equivalent are false, Ex: `40=41` is false.
+
 ## Functions
 
 Creating an anonymous function is simple. Use the `much` keyword to start the function, and the rest of the words in that line are considered the parameter name. The last value in the function is returned. And we end the scope of the function with the `wow` keyword.
@@ -59,6 +66,34 @@ plz foobar 42 "doges"
 very mecha
 ```
 
+## Control Flow
+
+Mechadoge currently only supports simple if statements using the `rly` keyword. It works as a conditional function call. It expects a boolean value, and a parameter-less function. Here is an example:
+
+```
+1=1
+rly much
+   plz bark "Hello, world!"
+wow
+```
+
+This will print "Hello, World!" to the terminal. Because `1=1` is true. Whereas the next example will output nothing because the `much` expression is never called.
+
+```
+1=2
+rly much
+   plz bark "Hello, world!"
+wow
+```
+
+You can also use boolean expressions:
+```
+plz smaller 4 5
+rly much
+   plz bark "Hello, there!"
+wow
+```
+
 ## Data structures
 
 mechadoge uses the longboi data format. The only data structure available is vectors.
@@ -75,7 +110,8 @@ Here we assigned the `foobar` variable with a vector that contains two items, "f
 If a long boi array has an even number of elements it can be converted into a hashmap with the `curly` function. 
 
 ```
-very foobar curly long "foo" "bar" boi
+plz curly long "foo" "bar" boi
+very foobar
 ```
 
 ## Comments
@@ -94,43 +130,5 @@ multiline comment
 loud
 ```
 
-## Types
-Mechadoge is dynamically typed but supports a few basic types Integers, Floats, Vectors, Characters, Strings, HashMaps, and Functions.
-
 ## File Extension
 mechadoge source code files are defined with a `.mdg`, and longboi data files are `.lboi`.
-
-# TODO
-## Modules
-
-To define a module (namespace) in mechadoge use the `such` keyword, and end it with `wow`.
-
-```
-such doge
-   very hello much foo
-      plz bark 'hello'
-   wow
-wow
-```
-
-We can import modules which will import all the methods, or use an alias:
-
-```
-so doge
-
-hello
-```
-
-Or use an alias:
-```
-so doge as d
-
-d.hello
-```
-
-Or to import specific methods
-```
-so doge long hello boi
-
-hello
-```

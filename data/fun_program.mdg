@@ -89,8 +89,7 @@ plz umm
 plz nand 1=1 1=2
 plz umm
 
-plz much foo
-   plz add foo 1
+plz much foo bar
+   plz add foo bar
    plz bark
-wow
-0
+wow 10 20

@@ -68,6 +68,19 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
                                 if b {
                                     stack[stack_pointer] = Snack::STRING("plz".to_string());
 
+                                    let function_pointer: String = stack[stack_pointer+1].to_string();
+
+                                    if function_pointer.contains("FUNC_START") {
+                                        let function: &processor::Function = context.function_heap.get(&function_pointer).unwrap();
+
+                                        if function.num_args > 0 {
+                                            panic!("Function after `rly` must expect 0 arguments");
+                                        }
+                                    } else {
+                                        panic!("Expecting function, found {}", function_pointer);
+                                    }
+                                        
+
                                     stack_pointer = stack_pointer + 1;
                                 } else {
                                     stack.pop();//pop off "FUNC_START"

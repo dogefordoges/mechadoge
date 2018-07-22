@@ -405,7 +405,10 @@ fn function_helper(lines: Vec<String>, line_number: usize) -> (Vec<String>, Hash
 
         if lines[i].contains("FUNC_START") && func_pointer != "" {
             let (newest_lines, newest_heap) = function_helper(lines.clone(), i);
-            function_body.body.push(snackify(newest_lines[0].clone()));
+
+            let tokens: Vec<&str> = newest_lines[0].split(" ").filter(|t| t != &"" && t != &" ").collect();
+
+            for t in tokens { function_body.body.push(snackify(t.to_string())) }           
 
             let len: usize = newest_lines.len();
 

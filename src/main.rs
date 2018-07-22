@@ -41,6 +41,7 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
     
     let mut stack_pointer: usize = stack.len() - 1;
     let mut global_variables: HashMap<String, Snack> = HashMap::<String, Snack>::new();
+    let mut loop_stack: Vec<Snack> = Vec::<Snack>::new();
 
     loop {
 
@@ -100,6 +101,57 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                 }
                             },
                             _ => { panic!("Expecting boolean, found {:?}", boolean) }
+                        }
+                    },
+                    "many" => {
+                        let block_pointer: String = globalize(stack.pop().unwrap(), &global_variables).to_string();
+
+                        if block_pointer.contains("FUNC_START") {
+                            let function: &processor::Function = context.function_heap.get(&block_pointer).unwrap();
+
+                            if function.num_args > 0 {
+                                panic!("many expects a function with no arguments, provided function expects {} arguments", function.num_args);
+                            } else {
+
+                                loop_stack.push(Snack::STRING(block_pointer.clone()));
+                                
+                                stack.push(Snack::STRING("plz".to_string()));
+                                stack.push(Snack::STRING(block_pointer));
+                                stack_pointer = stack.len() - 1;
+                            }
+                        } else if block_pointer == "many" {
+                            stack.push(Snack::STRING("many".to_string()));
+                            stack.push(Snack::STRING("plz".to_string()));
+                            stack.push(loop_stack.last().unwrap().clone());
+                            stack_pointer = stack.len() - 1;
+                        }else {
+                            panic!("Expecting function, found: {}", block_pointer);
+                        }
+                    },
+                    "break" => {
+                        loop_stack.pop();
+                        stack_pointer = stack.len() - 1;
+                        
+                        loop {
+
+                            let snack: Snack = stack[stack_pointer].clone();
+
+                            match snack {
+                                Snack::STRING(s) => {
+                                    if s == "many" {
+                                        stack.pop();//pop off many                                   
+                                        stack_pointer = stack.len() - 1;                                        
+                                        break
+                                    } else {
+                                        stack.pop();
+                                        stack_pointer = stack.len() - 1;
+                                    }
+                                },
+                                _ => {
+                                    stack.pop();
+                                    stack_pointer = stack.len() - 1;
+                                }
+                            }
                         }
                     },
                     "plz" => {
@@ -601,6 +653,43 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
 
                                             stack.push(v1);
                                             stack.push(v2);                                            
+                                        },
+                                        "set" => {                                            
+                                            let value: Snack = stack.pop().unwrap();
+                                            let variable_pointer: String = stack.pop().unwrap().to_string();
+                                            stack.pop();//pop off set
+                                            stack.pop();//pop off plz
+
+                                            if variable_pointer.contains("GLOBAL") {
+                                                global_variables.insert(variable_pointer, value);
+                                            } else {
+                                                panic!("Expecting global variable, found {}", variable_pointer);
+                                            }
+                                        },
+                                        "setat" => {
+                                            let value: Snack = stack.pop().unwrap();
+                                            let index: Snack = stack.pop().unwrap();
+                                            let array_pointer: String = globalize(stack.pop().unwrap(), &global_variables).to_string();
+                                            stack.pop();//pop off setat
+                                            stack.pop();//pop off plz
+
+                                            if array_pointer.contains("ARR") {
+                                                let mut snacks: Vec<Snack> = context.array_heap.get(&array_pointer).unwrap().clone();
+
+                                                match index {
+                                                    Snack::UINT(u) => {
+                                                        let n: usize = u as usize;
+                                                        snacks[n] = value;
+                                                        context.array_heap.insert(array_pointer, snacks);
+                                                    },
+                                                    _ => {
+                                                        panic!("Expecting unsigned integer, found {:?}", index);
+                                                    }
+                                                }
+                                                
+                                            } else {
+                                                panic!("Expecting array, found {}", array_pointer);
+                                            }
                                         },
                                         _ => {
                                             panic!("function_pointer: {} has no definition", s);

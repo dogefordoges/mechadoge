@@ -342,6 +342,13 @@ pub fn stackify(tokens: Vec<Snack>) -> Vec<Snack> {
                             new_tokens.push(stack.pop().unwrap());
                         }                        
                     },
+                    "many" => {
+                        stack.push(tokens[i].clone());//push "plz"
+                        loop {
+                            if stack.len() == 0 { break }
+                            new_tokens.push(stack.pop().unwrap());
+                        }                        
+                    },                    
                     "plz" => {
                         stack.push(tokens[i].clone());//push "plz"
                         loop {

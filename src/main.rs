@@ -396,6 +396,59 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                                 panic!("Expecting array pointer, found {}", array_pointer);
                                             }
                                         },
+                                        "pop" => {
+                                            let mut array_pointer: String = stack.pop().unwrap().to_string();
+                                            stack.pop();//pop off "pop"
+                                            stack.pop();//pop off "plz"
+
+                                            if array_pointer.contains("GLOBAL") {
+                                                array_pointer = global_variables.get(&array_pointer).unwrap().to_string();
+                                            }
+
+                                            if array_pointer.contains("ARR") {
+                                                //TODO: Can this be done without cloning?
+                                                let mut array: Vec<Snack> = context.array_heap.get(&array_pointer).unwrap().clone();
+                                                stack.push(array.pop().unwrap());
+                                                context.array_heap.insert(array_pointer, array);
+                                            } else {
+                                                panic!("Expecting array pointer, found {}", array_pointer);
+                                            }                                            
+                                        },
+                                        "prepend" => {
+                                            let value: Snack = stack.pop().unwrap();
+                                            let mut array_pointer: String = stack.pop().unwrap().to_string();
+                                            stack.pop();//pop off "prepend"
+                                            stack.pop();//pop off "plz"
+
+                                            if array_pointer.contains("GLOBAL") {
+                                                array_pointer = global_variables.get(&array_pointer).unwrap().to_string();
+                                            }
+
+                                            if array_pointer.contains("ARR") {
+                                                //TODO: Can this be done without cloning?
+                                                let mut array: Vec<Snack> = context.array_heap.get(&array_pointer).unwrap().clone();
+                                                array.insert(0, value);
+                                                context.array_heap.insert(array_pointer, array);
+                                            } else {
+                                                panic!("Expecting array pointer, found {}", array_pointer);
+                                            }
+                                        },
+                                        "len" => {
+                                            let mut array_pointer: String = stack.pop().unwrap().to_string();
+                                            stack.pop();//pop off "prepend"
+                                            stack.pop();//pop off "plz"
+
+                                            if array_pointer.contains("GLOBAL") {
+                                                array_pointer = global_variables.get(&array_pointer).unwrap().to_string();
+                                            }
+
+                                            if array_pointer.contains("ARR") {
+                                                let length: usize = context.array_heap.get(&array_pointer).unwrap().len();
+                                                stack.push(Snack::UINT(length as u64));
+                                            } else {
+                                                panic!("Expecting array pointer, found {}", array_pointer);
+                                            }
+                                        },                                        
                                         "free" => {                                            
                                             let mut pointer: String = stack.pop().unwrap().to_string();
                                             stack.pop();//pop off "free"

@@ -377,6 +377,25 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                                 _ => { panic!("Expecting unsigned integer, found: {:?}", index) }
                                             }
                                         },
+                                        "push" => {
+                                            let value: Snack = stack.pop().unwrap();
+                                            let mut array_pointer: String = stack.pop().unwrap().to_string();
+                                            stack.pop();//pop off "push"
+                                            stack.pop();//pop off "plz"
+
+                                            if array_pointer.contains("GLOBAL") {
+                                                array_pointer = global_variables.get(&array_pointer).unwrap().to_string();
+                                            }
+
+                                            if array_pointer.contains("ARR") {
+                                                //TODO: Can this be done without cloning?
+                                                let mut array: Vec<Snack> = context.array_heap.get(&array_pointer).unwrap().clone();
+                                                array.push(value);
+                                                context.array_heap.insert(array_pointer, array);
+                                            } else {
+                                                panic!("Expecting array pointer, found {}", array_pointer);
+                                            }
+                                        },
                                         "free" => {                                            
                                             let mut pointer: String = stack.pop().unwrap().to_string();
                                             stack.pop();//pop off "free"

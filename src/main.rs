@@ -355,7 +355,28 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
                                                     panic!("Expecting Function as second pointer to `each` found: {:?}", block_pointer);
                                                 }
                                             }
-                                        },                                        
+                                        },
+                                        "get" => {
+                                            let index: Snack = stack.pop().unwrap();
+                                            let mut array_pointer: String = stack.pop().unwrap().to_string();
+                                            stack.pop();//pop off "get"
+
+                                            if array_pointer.contains("GLOBAL") {
+                                                array_pointer = global_variables.get(&array_pointer).unwrap().to_string();
+                                            }
+
+                                            match index {
+                                                Snack::UINT(n) => {
+                                                    let i: usize = n as usize; 
+                                                    if context.array_heap.contains_key(&array_pointer) {
+                                                        stack.push(context.array_heap.get(&array_pointer).unwrap()[i].clone());
+                                                    } else {
+                                                        panic!("Empty array pointer!");
+                                                    }
+                                                },
+                                                _ => { panic!("Expecting unsigned integer, found: {:?}", index) }
+                                            }
+                                        },
                                         _ => {
                                             panic!("function_pointer: {} has no definition", s);
                                         },                                        

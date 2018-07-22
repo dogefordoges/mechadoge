@@ -23,8 +23,7 @@ fn read_to_lines(filename: &str) -> Vec<String> {
     return lines;
 }
 
-fn interpret(tokens: Vec<Snack>, context: processor::Context) {
-    let mut stack: Vec<Snack>  = tokens.clone();
+fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
     stack.reverse();
     
     let mut stack_pointer: usize = stack.len() - 1;
@@ -356,10 +355,11 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
                                                 }
                                             }
                                         },
-                                        "get" => {
+                                        "at" => {
                                             let index: Snack = stack.pop().unwrap();
                                             let mut array_pointer: String = stack.pop().unwrap().to_string();
                                             stack.pop();//pop off "get"
+                                            stack.pop();//pop off "plz"
 
                                             if array_pointer.contains("GLOBAL") {
                                                 array_pointer = global_variables.get(&array_pointer).unwrap().to_string();
@@ -375,6 +375,25 @@ fn interpret(tokens: Vec<Snack>, context: processor::Context) {
                                                     }
                                                 },
                                                 _ => { panic!("Expecting unsigned integer, found: {:?}", index) }
+                                            }
+                                        },
+                                        "free" => {                                            
+                                            let mut pointer: String = stack.pop().unwrap().to_string();
+                                            stack.pop();//pop off "free"
+                                            stack.pop();//pop off "plz"
+
+                                            if pointer.contains("GLOBAL") {
+                                                pointer = global_variables.get(&pointer).unwrap().to_string();
+                                            }
+
+                                            if pointer.contains("ARR") {
+                                                context.array_heap.remove(&pointer);
+                                            } else if pointer.contains("STR") {
+                                                context.string_heap.remove(&pointer);
+                                            } else if pointer.contains("FUNC") {
+                                                context.function_heap.remove(&pointer);
+                                            } else {
+                                                panic!("{} is not a valid pointer", pointer);
                                             }
                                         },
                                         _ => {

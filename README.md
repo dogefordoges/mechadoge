@@ -2,6 +2,8 @@
 
 Esoteric programming language inspired by [dogescript](https://github.com/dogescript/dogescript/blob/master/LANGUAGE.md), completely written in Rust.
 
+There are a number of differences between mechadoge and dogescript, the first is that, mechadoge is directly interpreted, whereas dogescript is transpiled into javascript. The second is that mechadoge is a stack based language with purely prefix notation.
+
 # Language Spec
 
 ## Assigning Variables
@@ -94,6 +96,39 @@ rly much
 wow
 ```
 
+## Looping
+
+mechadoge currently supports to ways to do looping, the first is a basic loop using the `many` keyword. The `many` keyword expects a function with zero arguments.
+In order to break out of the many loop, simply use the `break` keyword.
+
+Example:
+```
+very i 0
+
+many much
+
+   plz bark i
+
+   plz add i 1
+   plz set i
+
+   plz is i 10
+   rly much
+      break
+   wow
+wow
+```
+This will print out 0 through 9.
+
+The other way is to use the `each` function on an array, which expects an array, and a function that accepts 1 argument. Here is an example:
+
+```
+very array long 0 1 2 3 4 5 6 7 8 9 boi
+plz each array much n
+   plz bark n
+wow
+```
+
 ## Data structures
 
 mechadoge uses the longboi data format. The only data structure available is vectors.
@@ -104,15 +139,6 @@ very foobar long "foo" "bar" boi
 ```
 
 Here we assigned the `foobar` variable with a vector that contains two items, "foo" and "bar". Elements are separated with spaces. The end of the vector is denoted with boi.
-
-### Hash Maps
-
-If a long boi array has an even number of elements it can be converted into a hashmap with the `curly` function. 
-
-```
-plz curly long "foo" "bar" boi
-very foobar
-```
 
 ## Comments
 

@@ -168,6 +168,7 @@ pub fn div(v1: &Snack, v2: &Snack) -> Snack {
     }
 }
 
+//TODO: use context on string types
 pub fn equal(v1: &Snack, v2: &Snack) -> Snack {
     match v1 {
         Snack::UINT(u1) => {
@@ -224,6 +225,7 @@ pub fn not(value: &Snack) -> Snack {
     }
 }
 
+//TODO: Use context on string types
 pub fn isnot(v1: &Snack, v2: &Snack) -> Snack {
     match v1 {
         Snack::UINT(u1) => {

@@ -481,6 +481,127 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                                 panic!("{} is not a valid pointer", pointer);
                                             }
                                         },
+                                        "args" => {
+                                            stack.pop();//pop off "args"
+                                            stack.pop();//pop off "plz"
+                                            
+                                            let args = env::args();
+
+                                            let mut mecha_args: Vec<Snack> = Vec::<Snack>::new();
+
+                                            args.for_each(|a| mecha_args.push(Snack::STRING(a.to_string())));
+
+                                            let array_pointer: String = format!("ARR_{}", context.array_heap.len());
+
+                                            context.array_heap.insert(array_pointer.clone(), mecha_args);
+
+                                            stack.push(Snack::STRING(array_pointer));
+                                        },
+                                        "range" => {
+                                            let end: Snack = globalize(stack.pop().unwrap(), &global_variables);
+                                            let start: Snack = globalize(stack.pop().unwrap(), &global_variables);
+                                            stack.pop();//pop off range
+                                            stack.pop();//pop off plz
+                                            
+                                            let mut end_i: i64 = 0;
+                                            let mut start_i: i64 = 0;
+
+                                            match start {
+                                                Snack::INT(i) => {
+                                                   start_i = i;
+                                                },
+                                                Snack::UINT(u) => {
+                                                   start_i = u as i64;
+                                                },
+                                                _ => {
+                                                    panic!("Expecting start of range to be int or uint, found {:?}", start); 
+                                                }
+                                            }
+
+                                            match end {
+                                                Snack::INT(i) => {
+                                                   end_i = i;
+                                                },
+                                                Snack::UINT(u) => {
+                                                   end_i = u as i64;
+                                                },
+                                                _ => {
+                                                    panic!("Expecting start of range to be int or uint, found {:?}", start); 
+                                                }
+                                            }
+
+                                            let mut snacks: Vec<Snack> = Vec::<Snack>::new();
+
+                                            loop {
+                                                if start_i == end_i {
+                                                    break
+                                                }
+
+                                                snacks.push(Snack::INT(start_i));
+
+                                                start_i = start_i + 1;
+                                            }
+
+                                            let array_pointer: String = format!("ARR_{}", context.array_heap.len());
+
+                                            context.array_heap.insert(array_pointer.clone(), snacks);
+
+                                            stack.push(Snack::STRING(array_pointer));
+                                            
+                                        },
+                                        "copy" => {
+                                            let array_pointer: String = globalize(stack.pop().unwrap(), &global_variables).to_string();
+                                            stack.pop();//pop off copy
+                                            stack.pop();//pop off plz
+
+                                            let copy_array: Vec<Snack> = context.array_heap.get(&array_pointer).unwrap().clone();
+
+                                            let new_array_pointer: String = format!("ARR_{}", context.array_heap.len());
+
+                                            context.array_heap.insert(new_array_pointer.clone(), copy_array);
+
+                                            stack.push(Snack::STRING(array_pointer));
+                                        },
+                                        "reverse" => {
+                                            let array_pointer: String = globalize(stack.pop().unwrap(), &global_variables).to_string();
+                                            stack.pop();//pop off reverse
+                                            stack.pop();//pop off plz
+
+                                            let mut snacks: Vec<Snack> = context.array_heap.get(&array_pointer).unwrap().clone();
+
+                                            snacks.reverse();
+
+                                            context.array_heap.insert(array_pointer.clone(), snacks);
+
+                                            stack.push(Snack::STRING(array_pointer));
+                                        },
+                                        "join" => {
+                                            let join_string: String = context.string_heap.get(&stack.pop().unwrap().to_string()).unwrap().to_string();
+                                            let array_pointer: String = globalize(stack.pop().unwrap(), &global_variables).to_string();
+                                            stack.pop();//pop off reverse
+                                            stack.pop();//pop off plz
+
+                                            let snacks: Vec<Snack> = context.array_heap.get(&array_pointer).unwrap().clone();
+
+                                            let string_pointer: String = format!("STR_{}", context.string_heap.len());
+
+                                            let strings: Vec<String> = snacks.iter().map(|s| s.to_string()).collect();
+
+                                            let new_string: String = strings.join(&join_string);
+
+                                            context.string_heap.insert(string_pointer.clone(), Snack::STRING(new_string));
+
+                                            stack.push(Snack::STRING(string_pointer));
+                                        },
+                                        "swap" => {
+                                            let v1: Snack = stack.pop().unwrap();
+                                            let v2: Snack = stack.pop().unwrap();
+                                            stack.pop();//pop off swap
+                                            stack.pop();//pop off plz
+
+                                            stack.push(v1);
+                                            stack.push(v2);                                            
+                                        },
                                         _ => {
                                             panic!("function_pointer: {} has no definition", s);
                                         },                                        

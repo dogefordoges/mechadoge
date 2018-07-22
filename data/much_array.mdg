@@ -42,14 +42,14 @@ plz join
 plz bark
 
 plz args
-very as
+very argarray
 
-plz each as much a
-   plz bark a
-wow
+plz len argarray
+plz range 2
+very argrange
 
-quiet
-plz each nums much a
-   plz bark a
+plz each argrange much a
+   plz uint a
+   plz at argarray
+   plz bark
 wow
-loud

@@ -23,6 +23,19 @@ fn read_to_lines(filename: &str) -> Vec<String> {
     return lines;
 }
 
+fn globalize(snack: Snack, global_variables: &HashMap<String, Snack>) -> Snack {
+    match snack {
+        Snack::STRING(s) => {
+            if s.contains("GLOBAL") {
+                global_variables.get(&s).unwrap().clone()
+            } else {
+                Snack::STRING(s)
+            }
+        },
+        _ => { snack }
+    }
+}
+
 fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
     stack.reverse();
     
@@ -149,39 +162,39 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                             standard_library::bark(value.to_string(), &global_variables, &context.string_heap);
                                         },
                                         "add" => {
-                                            let v2: Snack = stack.pop().unwrap();
-                                            let v1: Snack = stack.pop().unwrap();
+                                            let v2: Snack = globalize(stack.pop().unwrap(), &global_variables);
+                                            let v1: Snack = globalize(stack.pop().unwrap(), &global_variables);
                                             stack.pop();//pop off add
                                             stack.pop();//pop off plz
 
                                             stack.push(standard_library::add(&v1, &v2));
                                         },
                                         "sub" => {
-                                            let v2: Snack = stack.pop().unwrap();
-                                            let v1: Snack = stack.pop().unwrap();
+                                            let v2: Snack = globalize(stack.pop().unwrap(), &global_variables);
+                                            let v1: Snack = globalize(stack.pop().unwrap(), &global_variables);
                                             stack.pop();//pop off sub
                                             stack.pop();//pop off plz
 
                                             stack.push(standard_library::sub(&v1, &v2));
                                         },
                                         "mul" => {
-                                            let v2: Snack = stack.pop().unwrap();
-                                            let v1: Snack = stack.pop().unwrap();
+                                            let v2: Snack = globalize(stack.pop().unwrap(), &global_variables);
+                                            let v1: Snack = globalize(stack.pop().unwrap(), &global_variables);
                                             stack.pop();//pop off mul
                                             stack.pop();//pop off plz
 
                                             stack.push(standard_library::mul(&v1, &v2));
                                         },
                                         "div" => {
-                                            let v2: Snack = stack.pop().unwrap();
-                                            let v1: Snack = stack.pop().unwrap();
+                                            let v2: Snack = globalize(stack.pop().unwrap(), &global_variables);
+                                            let v1: Snack = globalize(stack.pop().unwrap(), &global_variables);
                                             stack.pop();//pop off div
                                             stack.pop();//pop off plz
 
                                             stack.push(standard_library::div(&v1, &v2));
                                         },
                                         "float" => {
-                                            let v: Snack = stack.pop().unwrap();
+                                            let v: Snack = globalize(stack.pop().unwrap(), &global_variables);
                                             stack.pop();//pop off float
                                             stack.pop();//pop off plz
 
@@ -195,7 +208,7 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                             }
                                         },
                                         "int" => {
-                                            let v: Snack = stack.pop().unwrap();
+                                            let v: Snack = globalize(stack.pop().unwrap(), &global_variables);
                                             stack.pop();//pop off int
                                             stack.pop();//pop off plz
 
@@ -209,7 +222,7 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                             }                                            
                                         }
                                         "uint" => {
-                                            let v: Snack = stack.pop().unwrap();
+                                            let v: Snack = globalize(stack.pop().unwrap(), &global_variables);
                                             stack.pop();//pop off uint
                                             stack.pop();//pop off plz
 
@@ -223,7 +236,7 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                             }                                            
                                         },
                                         "umm" => {
-                                            let v: Snack = stack.pop().unwrap();
+                                            let v: Snack = globalize(stack.pop().unwrap(), &global_variables);
                                             stack.pop();//pop off uint
                                             stack.pop();//pop off plz
 
@@ -233,79 +246,79 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                             }
                                         },
                                         "is" => {
-                                            let v2: Snack = stack.pop().unwrap();
-                                            let v1: Snack = stack.pop().unwrap();
+                                            let v2: Snack = globalize(stack.pop().unwrap(), &global_variables);
+                                            let v1: Snack = globalize(stack.pop().unwrap(), &global_variables);
                                             stack.pop();//pop off is
                                             stack.pop();//pop off plz
 
                                             stack.push(standard_library::equal(&v1, &v2));
                                         },
                                         "isnot" => {
-                                            let v2: Snack = stack.pop().unwrap();
-                                            let v1: Snack = stack.pop().unwrap();
+                                            let v2: Snack = globalize(stack.pop().unwrap(), &global_variables);
+                                            let v1: Snack = globalize(stack.pop().unwrap(), &global_variables);
                                             stack.pop();//pop off isnot
                                             stack.pop();//pop off plz
 
                                             stack.push(standard_library::isnot(&v1, &v2));
                                         },
                                         "not" => {
-                                            let v: Snack = stack.pop().unwrap();
+                                            let v: Snack = globalize(stack.pop().unwrap(), &global_variables);
                                             stack.pop();//pop off is
                                             stack.pop();//pop off plz
 
                                             stack.push(standard_library::not(&v));
                                         },
                                         "bigger" => {
-                                            let v2: Snack = stack.pop().unwrap();
-                                            let v1: Snack = stack.pop().unwrap();
+                                            let v2: Snack = globalize(stack.pop().unwrap(), &global_variables);
+                                            let v1: Snack = globalize(stack.pop().unwrap(), &global_variables);
                                             stack.pop();//pop off bigger
                                             stack.pop();//pop off plz
 
                                             stack.push(standard_library::bigger(&v1, &v2));
                                         },
                                         "smaller" => {
-                                            let v2: Snack = stack.pop().unwrap();
-                                            let v1: Snack = stack.pop().unwrap();
+                                            let v2: Snack = globalize(stack.pop().unwrap(), &global_variables);
+                                            let v1: Snack = globalize(stack.pop().unwrap(), &global_variables);
                                             stack.pop();//pop off smaller
                                             stack.pop();//pop off plz
 
                                             stack.push(standard_library::smaller(&v1, &v2));
                                         },
                                         "biggerish" => {
-                                            let v2: Snack = stack.pop().unwrap();
-                                            let v1: Snack = stack.pop().unwrap();
+                                            let v2: Snack = globalize(stack.pop().unwrap(), &global_variables);
+                                            let v1: Snack = globalize(stack.pop().unwrap(), &global_variables);
                                             stack.pop();//pop off biggerish
                                             stack.pop();//pop off plz
 
                                             stack.push(standard_library::biggerish(&v1, &v2));
                                         },                                        
                                         "smallerish" => {
-                                            let v2: Snack = stack.pop().unwrap();
-                                            let v1: Snack = stack.pop().unwrap();
+                                            let v2: Snack = globalize(stack.pop().unwrap(), &global_variables);
+                                            let v1: Snack = globalize(stack.pop().unwrap(), &global_variables);
                                             stack.pop();//pop off smallerish
                                             stack.pop();//pop off plz
 
                                             stack.push(standard_library::smallerish(&v1, &v2));
                                         },
                                         "and" => {
-                                            let v2: Snack = stack.pop().unwrap();
-                                            let v1: Snack = stack.pop().unwrap();
+                                            let v2: Snack = globalize(stack.pop().unwrap(), &global_variables);
+                                            let v1: Snack = globalize(stack.pop().unwrap(), &global_variables);
                                             stack.pop();//pop off and
                                             stack.pop();//pop off plz
 
                                             stack.push(standard_library::and(&v1, &v2));
                                         },                                        
                                         "or" => {
-                                            let v2: Snack = stack.pop().unwrap();
-                                            let v1: Snack = stack.pop().unwrap();
+                                            let v2: Snack = globalize(stack.pop().unwrap(), &global_variables);
+                                            let v1: Snack = globalize(stack.pop().unwrap(), &global_variables);
                                             stack.pop();//pop off or
                                             stack.pop();//pop off plz
 
                                             stack.push(standard_library::or(&v1, &v2));
                                         },
                                         "nand" => {
-                                            let v2: Snack = stack.pop().unwrap();
-                                            let v1: Snack = stack.pop().unwrap();
+                                            let v2: Snack = globalize(stack.pop().unwrap(), &global_variables);
+                                            let v1: Snack = globalize(stack.pop().unwrap(), &global_variables);
                                             stack.pop();//pop off nand
                                             stack.pop();//pop off plz
 
@@ -356,7 +369,7 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                             }
                                         },
                                         "at" => {
-                                            let index: Snack = stack.pop().unwrap();
+                                            let index: Snack = globalize(stack.pop().unwrap(), &global_variables);
                                             let mut array_pointer: String = stack.pop().unwrap().to_string();
                                             stack.pop();//pop off "get"
                                             stack.pop();//pop off "plz"
@@ -378,7 +391,7 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                             }
                                         },
                                         "push" => {
-                                            let value: Snack = stack.pop().unwrap();
+                                            let value: Snack = globalize(stack.pop().unwrap(), &global_variables);
                                             let mut array_pointer: String = stack.pop().unwrap().to_string();
                                             stack.pop();//pop off "push"
                                             stack.pop();//pop off "plz"
@@ -415,7 +428,7 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                             }                                            
                                         },
                                         "prepend" => {
-                                            let value: Snack = stack.pop().unwrap();
+                                            let value: Snack = globalize(stack.pop().unwrap(), &global_variables);
                                             let mut array_pointer: String = stack.pop().unwrap().to_string();
                                             stack.pop();//pop off "prepend"
                                             stack.pop();//pop off "plz"

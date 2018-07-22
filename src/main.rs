@@ -139,8 +139,7 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                             match snack {
                                 Snack::STRING(s) => {
                                     if s == "many" {
-                                        stack.pop();//pop off many                                   
-                                        stack_pointer = stack.len() - 1;                                        
+                                        stack.pop();//pop off many
                                         break
                                     } else {
                                         stack.pop();

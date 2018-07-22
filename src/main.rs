@@ -124,33 +124,11 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                             stack.push(Snack::STRING("plz".to_string()));
                             stack.push(loop_stack.last().unwrap().clone());
                             stack_pointer = stack.len() - 1;
+                        } else if block_pointer == "break" {
+                            stack.pop();//pop off many
+                            loop_stack.pop();
                         }else {
                             panic!("Expecting function, found: {}", block_pointer);
-                        }
-                    },
-                    "break" => {
-                        loop_stack.pop();
-                        stack_pointer = stack.len() - 1;
-                        
-                        loop {
-
-                            let snack: Snack = stack[stack_pointer].clone();
-
-                            match snack {
-                                Snack::STRING(s) => {
-                                    if s == "many" {
-                                        stack.pop();//pop off many
-                                        break
-                                    } else {
-                                        stack.pop();
-                                        stack_pointer = stack.len() - 1;
-                                    }
-                                },
-                                _ => {
-                                    stack.pop();
-                                    stack_pointer = stack.len() - 1;
-                                }
-                            }
                         }
                     },
                     "plz" => {

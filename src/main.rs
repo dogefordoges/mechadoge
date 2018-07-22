@@ -329,7 +329,7 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                             let mut function_pointer: String = block_pointer.to_string();                                            
 
                                             match block_pointer {
-                                                Snack::STRING(_s) => {
+                                                Snack::STRING(s) => {
                                                     if global_variables.contains_key(&function_pointer) {
                                                         function_pointer = global_variables.get(&function_pointer).unwrap().to_string();
                                                     }
@@ -360,7 +360,7 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
 
                                                         stack_pointer = stack.len() - 1;
                                                     } else {
-                                                        panic!("Provided function has no definition");
+                                                        panic!("Provided function has no definition {}", s);
                                                     }
                                                 },
                                                 _ => {
@@ -637,7 +637,7 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
 fn handle_input() -> Vec<String> {
     assert!(env::args().len() > 1, "No input file given");
 
-    let filename: String = env::args().last().unwrap().to_string();
+    let filename: String = env::args().nth(1).unwrap().to_string();
 
     let filename_split: Vec<&str> = filename.split(".").collect();
 

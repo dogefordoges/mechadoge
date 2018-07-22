@@ -41,10 +41,15 @@ plz swap " "
 plz join
 plz bark
 
-quiet
-much a
+plz args
+very as
+
+plz each as much a
    plz bark a
 wow
-plz args
-plz each
+
+quiet
+plz each nums much a
+   plz bark a
+wow
 loud

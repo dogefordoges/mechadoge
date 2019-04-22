@@ -631,7 +631,7 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                             stack.push(v1);
                                             stack.push(v2);                                            
                                         },
-                                        "set" => {                                            
+                                        "set" => {
                                             let value: Snack = stack.pop().unwrap();
                                             let variable_pointer: String = stack.pop().unwrap().to_string();
                                             stack.pop();//pop off set

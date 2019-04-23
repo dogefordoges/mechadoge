@@ -36,17 +36,21 @@ plz join nums " "
 plz bark
 
 plz copy nums
-plz reverse
-plz swap " "
-plz join
+very newnums
+plz reverse newnums
+
+plz join newnums " "
 plz bark
 
 plz args
 very argarray
 
 plz len argarray
-plz range 2
+plz range 0
 very argrange
+
+plz len argrange
+plz bark
 
 plz each argrange much a
    plz uint a

@@ -352,6 +352,7 @@ fn interpret(mut stack: Vec<Snack>, context: &mut processor::Context) {
                                             stack.push(standard_library::nand(&v1, &v2));
                                         },
                                         "each" => {
+
                                             let block_pointer: Snack = stack.pop().unwrap();
                                             let mut function_pointer: String = block_pointer.to_string();
 
@@ -378,11 +379,11 @@ fn interpret(mut stack: Vec<Snack>, context: &mut processor::Context) {
 
                                                         let arr: &Vec<Snack> = context.get_array(&array_pointer);
 
-                                                        for i in 0..arr.len() {
+                                                        for i in (0..(arr.len() - 1 )).rev() {
                                                             stack.push(Snack::STRING("plz".to_string()));
                                                             stack.push(Snack::STRING(function_pointer.clone()));
                                                             //Cloning for now, but should turn this into an iter type or have a way to use references to snacks
-                                                            stack.push(arr[arr.len() - i].clone());
+                                                            stack.push(arr[i].clone());
                                                         }
 
                                                         stack_pointer = stack.len() - 1;

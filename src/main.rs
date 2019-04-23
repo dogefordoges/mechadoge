@@ -700,12 +700,47 @@ fn handle_input() -> Vec<String> {
     read_to_lines(&filename)
 }
 
-fn main() {
-
-    let input_lines: Vec<String> = handle_input();
-
-    let (processed_code, mut context): (Vec<Snack>, processor::Context) = processor::preprocess_code(input_lines);
-    
+fn execute_code(lines: Vec<String>) {
+    let (processed_code, mut context): (Vec<Snack>, processor::Context) = processor::preprocess_code(lines);
     interpret(processed_code, &mut context);
+}
 
+fn main() {
+    execute_code(handle_input());
+}
+
+#[cfg(test)]
+mod interpreter_tests {
+    use super::*;
+
+    #[test]
+    fn test_fun_program() {
+        execute_code(read_to_lines("data/fun_program.mdg"));
+    }
+
+    #[test]
+    fn test_many_array_mutate() {
+        execute_code(read_to_lines("data/many_array_mutate.mdg"));
+    }
+
+    #[test]
+    fn test_much_array() {
+        execute_code(read_to_lines("data/much_array.mdg"));
+    }
+    
+    #[test]
+    fn test_much_control() {
+        execute_code(read_to_lines("data/much_control.mdg"));
+    }
+
+    #[test]
+    fn test_much_fun() {
+        execute_code(read_to_lines("data/much_fun.mdg"));
+    }
+
+    #[test]
+    fn test_much_loops() {
+        execute_code(read_to_lines("data/much_loops.mdg"));
+    }
+    
 }

@@ -45,6 +45,8 @@ plz bark
 plz args
 very argarray
 
+shh this doesnt play nice with cargo test yet
+quiet
 plz len argarray
 plz range 0
 very argrange
@@ -57,3 +59,4 @@ plz each argrange much a
    plz at argarray
    plz bark
 wow
+loud

@@ -148,34 +148,33 @@ fn interpret(mut stack: Vec<Snack>, context: &mut processor::Context) {
 
                                         let mut local_scope: HashMap<String, Snack> = HashMap::<String, Snack>::new();
 
-                                        for name in context.param_names_function(&function_pointer).iter() {                           
-                                            local_scope.insert(name.to_string(), stack.pop().unwrap());
+                                        for name in context.param_names_function(&function_pointer).iter() {
+                                            let parameter_value = stack.pop().unwrap();
+                                            local_scope.insert(name.to_string(), parameter_value);
                                         }
 
                                         stack.pop();// ???
                                         stack.pop();// ???
 
-                                        let mut body: Vec<Snack> = processor::stackify(context.get_body_function(&function_pointer));
-                                        body.reverse();
+                                        let body: Vec<Snack> = processor::stackify(context.get_body_function(&function_pointer));
                                         
-                                        for code in body {
+                                        for code in body.iter().rev() {
                                             match code {
                                                 processor::Snack::STRING(s) => {
-                                                    if local_scope.contains_key(&s) {
-                                                        let snack: Snack = local_scope.get(&s).unwrap().clone();
+                                                    if local_scope.contains_key(s) {
+                                                        let snack: Snack = local_scope.get(s).unwrap().clone();
                                                         stack.push(snack);
                                                     } else {
                                                         stack.push(Snack::STRING(s.clone()))
                                                     }
                                                 },
                                                 _ => {
-                                                    stack.push(Snack::STRING(s.clone()))
+                                                    stack.push(code.clone());
                                                 }
                                             }
                                         }
 
-                                        stack_pointer = stack.len() - 1;
-                                        
+                                        stack_pointer = stack.len() - 1;                                        
                                     }
                                 } else {
                                     let func: &str = &s;
@@ -229,7 +228,7 @@ fn interpret(mut stack: Vec<Snack>, context: &mut processor::Context) {
                                                 Snack::FLOAT(_) => { stack.push(v); },
                                                 Snack::INT(i) => { stack.push(Snack::FLOAT(i as f64)); },
                                                 Snack::UINT(u) => { stack.push(Snack::FLOAT(u as f64)); },
-                                                _ => {
+                                                _ => {   
                                                     panic!("Cannot convert {:?} to float");
                                                 }
                                             }

@@ -676,9 +676,105 @@ pub fn snackify(token: String) -> Snack {
 }
 
 pub struct Context {
-    pub string_heap: HashMap<String, Snack>,
-    pub function_heap: HashMap<String, Function>,
-    pub array_heap: HashMap<String, Vec<Snack>>,
+    string_heap: HashMap<String, Snack>,
+    function_heap: HashMap<String, Function>,
+    array_heap: HashMap<String, Vec<Snack>>,
+}
+
+impl Context {
+    
+    pub fn push_array(&mut self, pointer: &str, val: Snack) {
+        let snacks = self.array_heap.get_mut(pointer).unwrap();
+        snacks.push(val);
+    }
+
+    pub fn pop_array(&mut self, pointer: &str) -> Option<Snack> {
+        let snacks = self.array_heap.get_mut(pointer).unwrap();
+        snacks.pop()
+    }
+
+    pub fn prepend_array(&mut self, pointer: &str, val: Snack) {
+        let snacks = self.array_heap.get_mut(pointer).unwrap();
+        snacks.insert(0, val);
+    }
+
+    pub fn get_array(&self, pointer: &str) -> &Vec<Snack> {
+        &self.array_heap.get(pointer).unwrap()
+    }
+
+    pub fn array_at(&self, pointer: &str, i: usize) -> Snack {
+        self.array_heap.get(pointer).unwrap()[i].clone()
+    }
+
+    pub fn has_array(&self, pointer: &str) -> bool {
+        self.array_heap.contains_key(pointer)
+    }
+
+    pub fn len_array(&self, pointer: &str) -> u64 {
+        self.array_heap.get(pointer).unwrap().len() as u64
+    }
+
+    pub fn delete_array(&mut self, pointer: &str) {
+        self.array_heap.remove(pointer);
+    }
+
+    pub fn num_arrays(&self) -> usize {
+        self.array_heap.len()
+    }
+
+    pub fn new_array(&mut self, pointer_name: String, snacks: Vec<Snack>) {
+        self.array_heap.insert(pointer_name, snacks);
+    }
+
+    pub fn copy_array(&self, pointer: &str) -> Vec<Snack> {
+        self.array_heap.get(pointer).unwrap().clone()
+    }
+
+    pub fn reverse_array(&mut self, pointer: &str) {
+        let snacks = self.array_heap.get_mut(pointer).unwrap();
+        snacks.reverse();
+    }
+
+    pub fn set_at_array(&mut self, pointer: &str, n: usize, value: Snack) {
+        let snacks = self.array_heap.get_mut(pointer).unwrap();
+        snacks[n] = value;
+    }
+
+    pub fn num_args_function(&self, pointer: &str) -> usize {
+        self.function_heap.get(pointer).unwrap().num_args
+    }
+
+    pub fn has_function(&self, pointer: &str) -> bool {
+        self.function_heap.contains_key(pointer)
+    }
+
+    pub fn param_names_function(&self, pointer: &str) -> Vec<String> {
+        self.function_heap.get(pointer).unwrap().parameter_names.clone()
+    }
+
+    pub fn get_body_function(&self, pointer: &str) -> Vec<Snack> {
+        self.function_heap.get(pointer).unwrap().body.clone()
+    }
+
+    pub fn get_string(&self, pointer: &str) -> Snack {
+        self.string_heap.get(pointer).unwrap().clone()
+    }
+
+    pub fn delete_function(&mut self, pointer: &str) {
+        self.function_heap.remove(pointer);
+    }
+
+    pub fn delete_string(&mut self, pointer: &str) {
+        self.string_heap.remove(pointer);
+    }
+
+    pub fn num_strings(&self) -> usize {
+        self.string_heap.len()
+    }
+
+    pub fn new_string(&mut self, pointer_name: String, str: String) {
+        self.string_heap.insert(pointer_name, Snack::STRING(str));
+    }
 }
 
 pub fn preprocess_code(lines: Vec<String>) -> (Vec<Snack>, Context) {

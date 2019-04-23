@@ -1,7 +1,7 @@
 use std::collections::HashMap;
-use processor::Snack;
+use processor::{Snack, Context};
 
-pub fn bark(value: String, global_variables: &HashMap<String, Snack>, string_heap: &HashMap<String, Snack>) {
+pub fn bark(value: String, global_variables: &HashMap<String, Snack>, context: &Context) {
 
     let mut print_value: String = value.clone();
 
@@ -9,8 +9,8 @@ pub fn bark(value: String, global_variables: &HashMap<String, Snack>, string_hea
         print_value = global_variables.get(&print_value).unwrap().to_string();
     }
 
-    if print_value.contains("STR") {        
-        print_value = string_heap.get(&print_value).unwrap().to_string();
+    if print_value.contains("STR") {
+        print_value = context.get_string(&print_value).to_string();
     }
 
     println!("{}", print_value);

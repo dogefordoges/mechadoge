@@ -36,7 +36,7 @@ fn globalize(snack: Snack, global_variables: &HashMap<String, Snack>) -> Snack {
     }
 }
 
-fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
+fn interpret(mut stack: Vec<Snack>, context: &mut processor::Context) {
     stack.reverse();
     
     let mut stack_pointer: usize = stack.len() - 1;
@@ -81,12 +81,10 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                 if b {
                                     stack[stack_pointer] = Snack::STRING("plz".to_string());
 
-                                    let function_pointer: String = stack[stack_pointer+1].to_string();
+                                    let function_pointer: String = stack[stack_pointer+1].to_string();                                    
 
-                                    if function_pointer.contains("FUNC_START") {
-                                        let function: &processor::Function = context.function_heap.get(&function_pointer).unwrap();
-
-                                        if function.num_args > 0 {
+                                    if function_pointer.contains("FUNC_START") {                                        
+                                        if context.num_args_function(&function_pointer) > 0 {
                                             panic!("Function after `rly` must expect 0 arguments");
                                         }
                                     } else {
@@ -107,12 +105,11 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                         let block_pointer: String = globalize(stack.pop().unwrap(), &global_variables).to_string();
 
                         if block_pointer.contains("FUNC_START") {
-                            let function: &processor::Function = context.function_heap.get(&block_pointer).unwrap();
 
-                            if function.num_args > 0 {
-                                panic!("many expects a function with no arguments, provided function expects {} arguments", function.num_args);
+                            let num_args = context.num_args_function(&block_pointer);
+                            if num_args > 0 {
+                                panic!("many expects a function with no arguments, provided function expects {} arguments", num_args);
                             } else {
-
                                 loop_stack.push(Snack::STRING(block_pointer.clone()));
                                 
                                 stack.push(Snack::STRING("plz".to_string()));
@@ -147,31 +144,32 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                 }
 
                                 if function_pointer != "NONE" {
-                                    if context.function_heap.contains_key(&function_pointer) {
-                                        let function: &processor::Function = context.function_heap.get(&function_pointer).unwrap();
+                                    if context.has_function(&function_pointer) {
 
                                         let mut local_scope: HashMap<String, Snack> = HashMap::<String, Snack>::new();
 
-                                        for i in 0..function.num_args {
-                                            let parameter_value: Snack = stack.pop().unwrap();
-                                            local_scope.insert(function.parameter_names[i].clone(), parameter_value);
+                                        for name in context.param_names_function(&function_pointer).iter() {                           
+                                            local_scope.insert(name.to_string(), stack.pop().unwrap());
                                         }
 
-                                        stack.pop();
-                                        stack.pop();
+                                        stack.pop();// ???
+                                        stack.pop();// ???
 
-                                        for code in processor::stackify(function.body.clone()).iter().rev() {
+                                        let mut body: Vec<Snack> = processor::stackify(context.get_body_function(&function_pointer));
+                                        body.reverse();
+                                        
+                                        for code in body {
                                             match code {
-                                                processor::Snack::STRING(local_var) => {
-                                                    if local_scope.contains_key(local_var) {
-                                                        let snack: Snack = local_scope.get(local_var).unwrap().clone();
+                                                processor::Snack::STRING(s) => {
+                                                    if local_scope.contains_key(&s) {
+                                                        let snack: Snack = local_scope.get(&s).unwrap().clone();
                                                         stack.push(snack);
                                                     } else {
-                                                        stack.push(code.clone())
+                                                        stack.push(Snack::STRING(s.clone()))
                                                     }
                                                 },
                                                 _ => {
-                                                    stack.push(code.clone())
+                                                    stack.push(Snack::STRING(s.clone()))
                                                 }
                                             }
                                         }
@@ -188,7 +186,7 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                             stack.pop();//pop off bark
                                             stack.pop();//pop off plz
 
-                                            standard_library::bark(value.to_string(), &global_variables, &context.string_heap);
+                                            standard_library::bark(value.to_string(), &global_variables, &context);
                                         },
                                         "add" => {
                                             let v2: Snack = globalize(stack.pop().unwrap(), &global_variables);
@@ -355,7 +353,7 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                         },
                                         "each" => {
                                             let block_pointer: Snack = stack.pop().unwrap();
-                                            let mut function_pointer: String = block_pointer.to_string();                                            
+                                            let mut function_pointer: String = block_pointer.to_string();
 
                                             match block_pointer {
                                                 Snack::STRING(s) => {
@@ -363,10 +361,9 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                                         function_pointer = global_variables.get(&function_pointer).unwrap().to_string();
                                                     }
 
-                                                    if context.function_heap.contains_key(&function_pointer) {
-                                                        let function: processor::Function = context.function_heap.get(&function_pointer).unwrap().clone();
+                                                    if context.has_function(&function_pointer) {
 
-                                                        assert!(function.num_args == 1, "function must contain up to, and no more than one argument");
+                                                        assert!(context.num_args_function(&function_pointer) == 1, "function must contain up to, and no more than one argument");
 
                                                         let mut array_pointer: String = stack.pop().unwrap().to_string();
 
@@ -379,12 +376,13 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
 
                                                         assert!(array_pointer.contains("ARR"), "first argument to `each` must be an array");
 
-                                                        let array: Vec<Snack> = context.array_heap.get(&array_pointer).unwrap().to_vec();
+                                                        let arr: &Vec<Snack> = context.get_array(&array_pointer);
 
-                                                        for element in array.iter().rev() {
+                                                        for i in 0..arr.len() {
                                                             stack.push(Snack::STRING("plz".to_string()));
                                                             stack.push(Snack::STRING(function_pointer.clone()));
-                                                            stack.push(element.clone());
+                                                            //Cloning for now, but should turn this into an iter type or have a way to use references to snacks
+                                                            stack.push(arr[arr.len() - i].clone());
                                                         }
 
                                                         stack_pointer = stack.len() - 1;
@@ -409,9 +407,9 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
 
                                             match index {
                                                 Snack::UINT(n) => {
-                                                    let i: usize = n as usize; 
-                                                    if context.array_heap.contains_key(&array_pointer) {
-                                                        stack.push(context.array_heap.get(&array_pointer).unwrap()[i].clone());
+                                                    let i: usize = n as usize;
+                                                    if context.has_array(&array_pointer) {
+                                                        stack.push(context.array_at(&array_pointer, i));
                                                     } else {
                                                         panic!("Empty array pointer!");
                                                     }
@@ -430,10 +428,7 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                             }
 
                                             if array_pointer.contains("ARR") {
-                                                //TODO: Can this be done without cloning?
-                                                let mut array: Vec<Snack> = context.array_heap.get(&array_pointer).unwrap().clone();
-                                                array.push(value);
-                                                context.array_heap.insert(array_pointer, array);
+                                                context.push_array(&array_pointer, value);
                                             } else {
                                                 panic!("Expecting array pointer, found {}", array_pointer);
                                             }
@@ -448,10 +443,15 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                             }
 
                                             if array_pointer.contains("ARR") {
-                                                //TODO: Can this be done without cloning?
-                                                let mut array: Vec<Snack> = context.array_heap.get(&array_pointer).unwrap().clone();
-                                                stack.push(array.pop().unwrap());
-                                                context.array_heap.insert(array_pointer, array);
+                                                let value: Option<Snack> = context.pop_array(&array_pointer);
+                                                match value {
+                                                    Some(v) => {
+                                                        stack.push(v);
+                                                    },
+                                                    None => {
+                                                        panic!("Pop on {} failed to return a value", array_pointer);
+                                                    }
+                                                }
                                             } else {
                                                 panic!("Expecting array pointer, found {}", array_pointer);
                                             }                                            
@@ -467,10 +467,7 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                             }
 
                                             if array_pointer.contains("ARR") {
-                                                //TODO: Can this be done without cloning?
-                                                let mut array: Vec<Snack> = context.array_heap.get(&array_pointer).unwrap().clone();
-                                                array.insert(0, value);
-                                                context.array_heap.insert(array_pointer, array);
+                                                context.prepend_array(&array_pointer, value);
                                             } else {
                                                 panic!("Expecting array pointer, found {}", array_pointer);
                                             }
@@ -485,8 +482,7 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                             }
 
                                             if array_pointer.contains("ARR") {
-                                                let length: usize = context.array_heap.get(&array_pointer).unwrap().len();
-                                                stack.push(Snack::UINT(length as u64));
+                                                stack.push(Snack::UINT(context.len_array(&array_pointer)));
                                             } else {
                                                 panic!("Expecting array pointer, found {}", array_pointer);
                                             }
@@ -501,11 +497,11 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                             }
 
                                             if pointer.contains("ARR") {
-                                                context.array_heap.remove(&pointer);
+                                                context.delete_array(&pointer);
                                             } else if pointer.contains("STR") {
-                                                context.string_heap.remove(&pointer);
+                                                context.delete_string(&pointer);
                                             } else if pointer.contains("FUNC") {
-                                                context.function_heap.remove(&pointer);
+                                                context.delete_function(&pointer);
                                             } else {
                                                 panic!("{} is not a valid pointer", pointer);
                                             }
@@ -520,9 +516,9 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
 
                                             args.for_each(|a| mecha_args.push(Snack::STRING(a.to_string())));
 
-                                            let array_pointer: String = format!("ARR_{}", context.array_heap.len());
+                                            let array_pointer: String = format!("ARR_{}", context.num_arrays());
 
-                                            context.array_heap.insert(array_pointer.clone(), mecha_args);
+                                            context.new_array(array_pointer.clone(), mecha_args);
 
                                             stack.push(Snack::STRING(array_pointer));
                                         },
@@ -531,9 +527,9 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                             let start: Snack = globalize(stack.pop().unwrap(), &global_variables);
                                             stack.pop();//pop off range
                                             stack.pop();//pop off plz
-                                            
-                                            let mut end_i: i64 = 0;
-                                            let mut start_i: i64 = 0;
+
+                                            let mut start_i: i64;
+                                            let mut end_i: i64;                                            
 
                                             match start {
                                                 Snack::INT(i) => {
@@ -571,9 +567,8 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                                 start_i = start_i + 1;
                                             }
 
-                                            let array_pointer: String = format!("ARR_{}", context.array_heap.len());
-
-                                            context.array_heap.insert(array_pointer.clone(), snacks);
+                                            let array_pointer: String = format!("ARR_{}", context.num_arrays());
+                                            context.new_array(array_pointer.clone(), snacks);
 
                                             stack.push(Snack::STRING(array_pointer));
                                             
@@ -583,42 +578,34 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                             stack.pop();//pop off copy
                                             stack.pop();//pop off plz
 
-                                            let copy_array: Vec<Snack> = context.array_heap.get(&array_pointer).unwrap().clone();
+                                            let new_array_pointer: String = format!("ARR_{}", context.num_arrays());
+                                            let new_array = context.copy_array(&array_pointer);
+                                            context.new_array(new_array_pointer.clone(), new_array);
 
-                                            let new_array_pointer: String = format!("ARR_{}", context.array_heap.len());
-
-                                            context.array_heap.insert(new_array_pointer.clone(), copy_array);
-
-                                            stack.push(Snack::STRING(array_pointer));
+                                            stack.push(Snack::STRING(new_array_pointer));
                                         },
                                         "reverse" => {
                                             let array_pointer: String = globalize(stack.pop().unwrap(), &global_variables).to_string();
                                             stack.pop();//pop off reverse
                                             stack.pop();//pop off plz
 
-                                            let mut snacks: Vec<Snack> = context.array_heap.get(&array_pointer).unwrap().clone();
-
-                                            snacks.reverse();
-
-                                            context.array_heap.insert(array_pointer.clone(), snacks);
-
-                                            stack.push(Snack::STRING(array_pointer));
+                                            context.reverse_array(&array_pointer);
                                         },
                                         "join" => {
-                                            let join_string: String = context.string_heap.get(&stack.pop().unwrap().to_string()).unwrap().to_string();
+                                            let join_string: String = context.get_string(&stack.pop().unwrap().to_string()).to_string();
                                             let array_pointer: String = globalize(stack.pop().unwrap(), &global_variables).to_string();
                                             stack.pop();//pop off reverse
                                             stack.pop();//pop off plz
 
-                                            let snacks: Vec<Snack> = context.array_heap.get(&array_pointer).unwrap().clone();
+                                            let snacks: Vec<Snack> = context.copy_array(&array_pointer);
 
-                                            let string_pointer: String = format!("STR_{}", context.string_heap.len());
+                                            let string_pointer: String = format!("STR_{}", context.num_strings());
 
                                             let strings: Vec<String> = snacks.iter().map(|s| s.to_string()).collect();
 
                                             let new_string: String = strings.join(&join_string);
 
-                                            context.string_heap.insert(string_pointer.clone(), Snack::STRING(new_string));
+                                            context.new_string(string_pointer.clone(), new_string);
 
                                             stack.push(Snack::STRING(string_pointer));
                                         },
@@ -650,14 +637,12 @@ fn interpret(mut stack: Vec<Snack>, mut context: processor::Context) {
                                             stack.pop();//pop off setat
                                             stack.pop();//pop off plz
 
-                                            if array_pointer.contains("ARR") {
-                                                let mut snacks: Vec<Snack> = context.array_heap.get(&array_pointer).unwrap().clone();
+                                            if array_pointer.contains("ARR") {                                               
 
                                                 match index {
                                                     Snack::UINT(u) => {
                                                         let n: usize = u as usize;
-                                                        snacks[n] = value;
-                                                        context.array_heap.insert(array_pointer, snacks);
+                                                        context.set_at_array(&array_pointer, n, value);
                                                     },
                                                     _ => {
                                                         panic!("Expecting unsigned integer, found {:?}", index);
@@ -718,8 +703,8 @@ fn main() {
 
     let input_lines: Vec<String> = handle_input();
 
-    let (processed_code, context): (Vec<Snack>, processor::Context) = processor::preprocess_code(input_lines);
+    let (processed_code, mut context): (Vec<Snack>, processor::Context) = processor::preprocess_code(input_lines);
     
-    interpret(processed_code, context);
+    interpret(processed_code, &mut context);
 
 }
